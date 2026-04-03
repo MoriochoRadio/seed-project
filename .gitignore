@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# 가상환경
+.venv/
+venv/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# 데이터 (용량 큰 파일 제외)
+data/raw/
+data/processed/
+outputs/*.mp4
+outputs/*.avi
+
+# 모델 가중치 (용량 큰 파일 제외)
+models/yolo11_sperm_v2/weights/
+models/*.pkl
+
+# 단, 설정 파일은 포함
+!bytetrack_custom.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 로그
+*.log
+runs/
+
+# 임시 파일
+*.tmp
+*.bak

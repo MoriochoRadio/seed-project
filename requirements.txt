@@ -1,0 +1,34 @@
+# AI 기반 정자 운동성 분석 시스템 - 의존성 패키지
+# Python 3.10 기준
+# PyTorch는 별도 설치 필요 (아래 주석 참고)
+
+# -------------------------------------------------------
+# PyTorch 설치 (CUDA 12.4 기준)
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+#
+# CPU only:
+# pip install torch torchvision torchaudio
+# -------------------------------------------------------
+
+# 핵심 딥러닝
+ultralytics>=8.3.0       # YOLO11 (탐지 + 추적)
+
+# 영상/이미지 처리
+opencv-python>=4.8.0
+
+# 데이터 처리
+numpy>=1.24.0
+pandas>=2.0.0
+
+# 머신러닝
+scikit-learn>=1.3.0
+
+# 시각화
+matplotlib>=3.7.0
+
+# 설정 파일 처리
+pyyaml>=6.0
+
+# 노트북 환경
+jupyterlab>=4.0.0
+ipykernel>=6.0.0
