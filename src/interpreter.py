@@ -171,3 +171,116 @@ def assess_confidence(counts: list,
         'quality_issues':   quality_issues,
         'needs_retake':     confidence_score < 60,
     }
+
+# CASA 키네마틱 참고 기준
+# (WHO 5판 + 임상 연구 기반, 장비별 차이 있음)
+KINEMATIC_REFERENCE = {
+    'VCL': {'normal': 25.0,  'unit': 'µm/s', 'name': '곡선 속도'},
+    'VSL': {'normal': 15.0,  'unit': 'µm/s', 'name': '직선 속도'},
+    'VAP': {'normal': 20.0,  'unit': 'µm/s', 'name': '평균 경로 속도'},
+    'LIN': {'normal': 0.50,  'unit': '',      'name': '직선성'},
+    'STR': {'normal': 0.80,  'unit': '',      'name': '직진성'},
+    'WOB': {'normal': 0.70,  'unit': '',      'name': '진동도'},
+    'ALH': {'normal': 2.0,   'unit': 'µm',    'name': '횡변위 진폭'},
+}
+
+
+def interpret_kinematics(kinematics: dict) -> dict:
+    """
+    CASA 키네마틱 파라미터 해석
+
+    Args:
+        kinematics: compute_sample_kinematics() 결과
+
+    Returns:
+        {
+          'interpretations': [해석 문자열 리스트],
+          'ppms': float,         전진 운동성 정자 비율 추정
+          'kinematic_level': str normal / warning / poor
+        }
+    """
+    if not kinematics:
+        return {}
+
+    interps = []
+    issues  = 0
+
+    vcl = kinematics.get('VCL_mean', 0)
+    vsl = kinematics.get('VSL_mean', 0)
+    vap = kinematics.get('VAP_mean', 0)
+    lin = kinematics.get('LIN_mean', 0)
+    str_ = kinematics.get('STR_mean', 0)
+    wob = kinematics.get('WOB_mean', 0)
+    alh = kinematics.get('ALH_mean', 0)
+
+    # VCL 해석
+    if vcl >= 25:
+        interps.append(
+            f"✅ VCL {vcl:.1f} µm/s — 곡선 속도 정상 (기준 ≥25)")
+    else:
+        issues += 1
+        interps.append(
+            f"⚠️  VCL {vcl:.1f} µm/s — 곡선 속도 낮음 (기준 ≥25)")
+
+    # VSL 해석
+    if vsl >= 15:
+        interps.append(
+            f"✅ VSL {vsl:.1f} µm/s — 직선 속도 정상 (기준 ≥15)")
+    else:
+        issues += 1
+        interps.append(
+            f"⚠️  VSL {vsl:.1f} µm/s — 직선 속도 낮음 (기준 ≥15)")
+
+    # VAP 해석
+    if vap >= 20:
+        interps.append(
+            f"✅ VAP {vap:.1f} µm/s — 평균 경로 속도 정상 (기준 ≥20)")
+    else:
+        issues += 1
+        interps.append(
+            f"⚠️  VAP {vap:.1f} µm/s — 평균 경로 속도 낮음 (기준 ≥20)")
+
+    # STR 해석 (가장 임상적으로 중요)
+    if str_ >= 0.80:
+        interps.append(
+            f"✅ STR {str_:.3f} — 직진성 정상 (기준 ≥0.80)")
+    elif str_ >= 0.60:
+        issues += 1
+        interps.append(
+            f"⚠️  STR {str_:.3f} — 직진성 경계 (기준 ≥0.80)")
+    else:
+        issues += 2
+        interps.append(
+            f"🔴 STR {str_:.3f} — 직진성 낮음 (기준 ≥0.80)")
+
+    # LIN 해석
+    if lin >= 0.50:
+        interps.append(
+            f"✅ LIN {lin:.3f} — 직선성 정상 (기준 ≥0.50)")
+    else:
+        issues += 1
+        interps.append(
+            f"⚠️  LIN {lin:.3f} — 직선성 낮음 (기준 ≥0.50)")
+
+    # PPMS 추정 (VAP > 25 AND STR > 0.8)
+    ppms_eligible = (vap >= 25) and (str_ >= 0.80)
+    ppms_note = (
+        "전진 운동성 정자(PPMS) 기준 충족 가능"
+        if ppms_eligible
+        else "전진 운동성 정자(PPMS) 기준 미달 가능성"
+    )
+
+    # 종합 등급
+    if issues == 0:
+        level = 'normal'
+    elif issues <= 2:
+        level = 'warning'
+    else:
+        level = 'poor'
+
+    return {
+        'interpretations': interps,
+        'ppms_note':       ppms_note,
+        'kinematic_level': level,
+        'issues':          issues,
+    }

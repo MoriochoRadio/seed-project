@@ -109,3 +109,73 @@ class SpermTracker:
             'ratio_slow':    float(np.mean(speeds <= 0.5)),
             'n_tracks':      len(speeds),
         }
+
+    def compute_sample_kinematics(self,
+                               track_history: dict,
+                               fps: float = 50.0,
+                               um_per_px: float = 0.7031) -> dict:
+        """
+        전체 샘플의 CASA 키네마틱 파라미터 계산
+
+        Returns:
+            샘플 수준 평균 키네마틱 파라미터 딕셔너리
+        """
+        VCLs, VSLs, VAPs = [], [], []
+        LINs, STRs, WOBs = [], [], []
+        ALHs = []
+
+        for tid, pts in track_history.items():
+            if len(pts) < 10:
+                continue
+
+            coords = np.array([(cx, cy) for _, cx, cy in pts])
+            n      = len(coords)
+            dt     = 1.0 / fps
+
+            # VCL
+            dists       = np.sqrt(np.sum(np.diff(coords, axis=0)**2, axis=1))
+            total_path  = float(np.sum(dists))
+            total_time  = (n - 1) * dt
+            vcl = (total_path * um_per_px) / total_time
+
+            # VSL
+            straight = float(np.sqrt(
+                (coords[-1][0]-coords[0][0])**2 +
+                (coords[-1][1]-coords[0][1])**2))
+            vsl = (straight * um_per_px) / total_time
+
+            # VAP (5점 이동 평균 경로)
+            w = min(5, n)
+            smoothed = np.array([
+                coords[max(0, i-w//2):i+w//2+1].mean(axis=0)
+                for i in range(n)
+            ])
+            avg_path = float(np.sum(
+                np.sqrt(np.sum(np.diff(smoothed, axis=0)**2, axis=1))))
+            vap = (avg_path * um_per_px) / total_time
+
+            lin = vsl / (vcl + 1e-6)
+            str_ = vsl / (vap + 1e-6)
+            wob = vap / (vcl + 1e-6)
+
+            # ALH
+            devs = np.sqrt(np.sum((coords - smoothed)**2, axis=1))
+            alh  = float(np.mean(devs)) * um_per_px
+
+            VCLs.append(vcl); VSLs.append(vsl); VAPs.append(vap)
+            LINs.append(lin); STRs.append(str_); WOBs.append(wob)
+            ALHs.append(alh)
+
+        if not VCLs:
+            return {}
+
+        return {
+            'VCL_mean': round(float(np.mean(VCLs)), 1),
+            'VSL_mean': round(float(np.mean(VSLs)), 1),
+            'VAP_mean': round(float(np.mean(VAPs)), 1),
+            'LIN_mean': round(float(np.mean(LINs)), 3),
+            'STR_mean': round(float(np.mean(STRs)), 3),
+            'WOB_mean': round(float(np.mean(WOBs)), 3),
+            'ALH_mean': round(float(np.mean(ALHs)), 2),
+            'n_analyzed': len(VCLs),
+        }

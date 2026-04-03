@@ -11,7 +11,7 @@ pipeline.py
 from .detector    import SpermDetector
 from .tracker     import SpermTracker
 from .analyzer    import MotilityAnalyzer
-from .interpreter import interpret_motility, assess_confidence
+from .interpreter import interpret_motility, assess_confidence, interpret_kinematics
 
 
 class SpermAnalysisPipeline:
@@ -71,6 +71,9 @@ class SpermAnalysisPipeline:
         if verbose:
             print(f"[3/4] 특징 추출 완료")
 
+        kinematics = self.tracker.compute_sample_kinematics(
+            track_history, fps=50.0)
+
         # 4. 운동성 예측
         motility = self.analyzer.predict(features)
         if verbose:
@@ -91,6 +94,7 @@ class SpermAnalysisPipeline:
             **motility,
             **interp,
             **quality,
+            'kinematics':      kinematics,
         }
 
     @staticmethod
@@ -134,6 +138,29 @@ class SpermAnalysisPipeline:
         print(f"\n{emoji} 종합 판정: [{result['status']}]")
         print(f"\n💬 권고사항:")
         print(f"   {result['recommendation']}")
+
+        if result.get('kinematics'):
+            k    = result['kinematics']
+            kint = interpret_kinematics(k)
+
+            print(f"\n📐 CASA 키네마틱 파라미터")
+            print(f"   {'파라미터':<8} {'측정값':>10}  {'참고 기준'}")
+            print(f"   {'-'*40}")
+            print(f"   {'VCL':<8} {k['VCL_mean']:>7.1f} µm/s  ≥ 25 µm/s")
+            print(f"   {'VSL':<8} {k['VSL_mean']:>7.1f} µm/s  ≥ 15 µm/s")
+            print(f"   {'VAP':<8} {k['VAP_mean']:>7.1f} µm/s  ≥ 20 µm/s")
+            print(f"   {'LIN':<8} {k['LIN_mean']:>7.3f}       ≥ 0.50")
+            print(f"   {'STR':<8} {k['STR_mean']:>7.3f}       ≥ 0.80")
+            print(f"   {'WOB':<8} {k['WOB_mean']:>7.3f}       ≥ 0.70")
+            print(f"   {'ALH':<8} {k['ALH_mean']:>7.2f} µm    ≥ 2.0 µm")
+            print(f"   (분석 정자 수: {k['n_analyzed']}개)")
+
+            if kint:
+                print(f"\n🔬 키네마틱 해석")
+                for interp in kint['interpretations']:
+                    print(f"   {interp}")
+                print(f"   📌 {kint['ppms_note']}")
+
         print(f"\n{'─'*55}")
         print(f"   ※ 이 결과는 AI 보조 분석이며 의학적 진단이 아닙니다.")
         print(f"{'='*55}\n")
