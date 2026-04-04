@@ -16,7 +16,7 @@ from .detector    import SpermDetector
 from .tracker     import SpermTracker
 from .analyzer    import MotilityAnalyzer
 from .interpreter import (interpret_motility, assess_confidence,
-                           interpret_kinematics)
+                           interpret_kinematics, get_overall_judgment)
 
 
 class SpermAnalysisPipeline:
@@ -31,7 +31,8 @@ class SpermAnalysisPipeline:
         base = r'C:\Users\neo62\sperm-ai'
 
         yolo_path      = yolo_path or os.path.join(
-            base, 'models', 'yolo11_sperm_v2', 'weights', 'best.pt')
+            base, 'models', 'yolo11_sperm_v2',
+            'weights', 'best.pt')
         model_path     = model_path or os.path.join(
             base, 'models', 'motility_ensemble.pkl')
         tracker_config = tracker_config or os.path.join(
@@ -43,7 +44,6 @@ class SpermAnalysisPipeline:
         self.tracker   = SpermTracker(self.detector, tracker_config)
         self.analyzer  = MotilityAnalyzer(model_path)
 
-        # 형태 분석기 (없으면 운동성만 수행)
         try:
             from .morphology import MorphologyAnalyzer
             self.morph_analyzer = MorphologyAnalyzer(morph_path)
@@ -55,7 +55,7 @@ class SpermAnalysisPipeline:
     def _extract_crops(self, video_path: str,
                        max_frames: int = 50) -> list:
         """영상에서 YOLO11 탐지 기반 정자 크롭 추출"""
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4,4))
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4, 4))
         cap   = cv2.VideoCapture(video_path)
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         step  = max(1, total // max_frames)
@@ -102,9 +102,6 @@ class SpermAnalysisPipeline:
                 verbose: bool = True) -> dict:
         """
         영상 입력 → 운동성 + 키네마틱 + 형태 통합 분석
-
-        Returns:
-            전체 CASA 분석 결과 딕셔너리
         """
         name = video_path.split('\\')[-1]
         if verbose:
@@ -138,7 +135,7 @@ class SpermAnalysisPipeline:
             print(f"[4/5] 운동성 분석 완료")
 
         # Step 6: 형태 분석
-        morphology       = {}
+        morphology        = {}
         morphology_interp = {}
         if self.morph_analyzer is not None:
             crops = self._extract_crops(video_path)
@@ -159,106 +156,176 @@ class SpermAnalysisPipeline:
             motility['immotile'])
         quality = assess_confidence(counts, track_history, N)
 
+        # Step 8: 종합 판정
+        morph_level = morphology_interp.get('level', '')
+        overall     = get_overall_judgment(
+            interp['level'],
+            morph_level,
+            quality['confidence_score'])
+
         return {
-            'video':             name,
-            'N':                 N,
+            'video':              name,
+            'N':                  N,
             **motility,
             **interp,
             **quality,
-            'kinematics':        kinematics,
-            'morphology':        morphology,
-            'morphology_interp': morphology_interp,
+            'kinematics':         kinematics,
+            'morphology':         morphology,
+            'morphology_interp':  morphology_interp,
+            **overall,
         }
 
     # ── 보고서 출력 ────────────────────────────────────────
     @staticmethod
     def print_report(result: dict,
                      participant_id: str = None) -> None:
-        """AI-CASA 통합 보고서 출력"""
+        """AI-CASA 통합 보고서 출력 (일반인 친화적)"""
 
-        title = "AI-CASA 분석 보고서"
+        W = 60
+
+        title = "AI 정자 분석 보고서"
         if participant_id:
-            title += f" — 참가자 {participant_id}"
+            title += f"  (참가자 {participant_id})"
 
-        level_emoji = {
-            'normal': '🟢', 'warning': '🟡', 'severe': '🔴'}
-        emoji = level_emoji.get(result['level'], '⚪')
+        # ── 헤더 ──────────────────────────────────────────
+        print(f"\n{'='*W}")
+        print(f"  🔬 {title}")
+        print(f"{'='*W}")
 
-        print(f"\n{'='*57}")
-        print(f"  {title}")
-        print(f"{'='*57}")
+        # ── 분석 품질 ─────────────────────────────────────
+        score = result['confidence_score']
+        icon  = result['confidence_icon']
+        level = result['confidence_level']
 
-        # 신뢰도
-        print(f"\n📊 분석 신뢰도: "
-              f"{result['confidence_icon']} "
-              f"{result['confidence_level']} "
-              f"({result['confidence_score']}점)")
-        for issue in result['quality_issues']:
-            print(f"   ⚠️  {issue}")
+        print(f"\n【 분석 품질 】")
+        print(f"  {icon} 신뢰도: {level} ({score}점 / 100점)")
+
+        if result['quality_issues']:
+            for issue in result['quality_issues']:
+                print(f"  ⚠️  {issue}")
         if result['needs_retake']:
-            print(f"   🔄 재촬영을 권고합니다")
+            print(f"  🔄 재촬영을 권고합니다")
+            print(f"     (신뢰도가 낮아 결과가 부정확할 수 있습니다)")
 
-        # 운동성
-        print(f"\n📈 운동성 분석 (탐지 정자 수: {result['N']}개)")
-        print(f"   전진 운동성:   {result['progressive']:>5.1f}%")
-        print(f"   비전진 운동성: {result['non_progressive']:>5.1f}%")
-        print(f"   비운동성:      {result['immotile']:>5.1f}%")
-        print(f"   총 운동성:     {result['total_motile']:>5.1f}%")
+        # ── 운동성 수치 ───────────────────────────────────
+        print(f"\n{'─'*W}")
+        print(f"【 정자 운동성 분석 】  (탐지된 정자: {result['N']}개)")
+        print(f"{'─'*W}")
 
-        # WHO 해석
-        print(f"\n🔍 WHO 기준 해석")
-        for interp in result['interpretation']:
-            print(f"   {interp}")
+        prog     = result['progressive']
+        non_prog = result['non_progressive']
+        immotile = result['immotile']
+        total    = result['total_motile']
 
-        print(f"\n{emoji} 운동성 판정: [{result['status']}]")
-        print(f"\n💬 권고사항:")
-        print(f"   {result['recommendation']}")
+        def bar(val, color='█'):
+            return color * int(val / 5)
 
-        # 키네마틱
+        print(f"\n  앞으로 잘 나아가는 정자  "
+              f"(전진 운동성):  {prog:>5.1f}%  {bar(prog)}")
+        print(f"  조금 움직이는 정자      "
+              f"(비전진 운동성):{non_prog:>5.1f}%  {bar(non_prog, '░')}")
+        print(f"  움직이지 않는 정자      "
+              f"(비운동성):     {immotile:>5.1f}%  {bar(immotile, '·')}")
+        print(f"  {'─'*45}")
+        print(f"  전체 움직이는 정자      "
+              f"(총 운동성):    {total:>5.1f}%")
+
+        # ── WHO 기준 해석 ─────────────────────────────────
+        print(f"\n  📋 WHO 기준 검토 결과")
+        for line in result['interpretation']:
+            print(f"     {line}")
+
+        # ── 키네마틱 ──────────────────────────────────────
         if result.get('kinematics'):
             k    = result['kinematics']
-            from .interpreter import interpret_kinematics
             kint = interpret_kinematics(k)
 
-            print(f"\n📐 CASA 키네마틱 파라미터")
-            print(f"   {'파라미터':<8} {'측정값':>10}  참고 기준")
-            print(f"   {'-'*38}")
-            print(f"   {'VCL':<8} {k['VCL_mean']:>7.1f} µm/s  ≥ 25")
-            print(f"   {'VSL':<8} {k['VSL_mean']:>7.1f} µm/s  ≥ 15")
-            print(f"   {'VAP':<8} {k['VAP_mean']:>7.1f} µm/s  ≥ 20")
-            print(f"   {'LIN':<8} {k['LIN_mean']:>7.3f}       ≥ 0.50")
-            print(f"   {'STR':<8} {k['STR_mean']:>7.3f}       ≥ 0.80")
-            print(f"   {'WOB':<8} {k['WOB_mean']:>7.3f}       ≥ 0.70")
-            print(f"   {'ALH':<8} {k['ALH_mean']:>7.2f} µm    ≥ 2.0")
-            print(f"   (분석 정자: {k['n_analyzed']}개)")
+            print(f"\n{'─'*W}")
+            print(f"【 정자 운동 패턴 분석 (CASA 키네마틱) 】")
+            print(f"{'─'*W}")
+            print(f"\n  속도 지표:")
+            print(f"  {'곡선 속도 (VCL)':<22} {k['VCL_mean']:>6.1f} µm/s"
+                  f"  (기준 ≥25 µm/s)")
+            print(f"  {'직선 속도 (VSL)':<22} {k['VSL_mean']:>6.1f} µm/s"
+                  f"  (기준 ≥15 µm/s)")
+            print(f"  {'평균경로 속도 (VAP)':<22} {k['VAP_mean']:>6.1f} µm/s"
+                  f"  (기준 ≥20 µm/s)")
+
+            print(f"\n  운동 패턴 지표:")
+            print(f"  {'직진성 (STR)':<22} {k['STR_mean']:>6.3f}"
+                  f"       (기준 ≥0.80,  1에 가까울수록 직선)")
+            print(f"  {'직선성 (LIN)':<22} {k['LIN_mean']:>6.3f}"
+                  f"       (기준 ≥0.50)")
+            print(f"  {'진동도 (WOB)':<22} {k['WOB_mean']:>6.3f}"
+                  f"       (기준 ≥0.70)")
 
             if kint:
-                print(f"\n🔬 키네마틱 해석")
+                print(f"\n  🔍 해석:")
                 for line in kint['interpretations']:
-                    print(f"   {line}")
-                print(f"   📌 {kint['ppms_note']}")
+                    print(f"     {line}")
+                print(f"  📌 {kint['ppms_note']}")
 
-        # 형태 분석
+        # ── 형태 분석 ─────────────────────────────────────
         if result.get('morphology') and result['morphology']:
             m    = result['morphology']
             mint = result.get('morphology_interp', {})
 
-            print(f"\n🧬 형태 분석 결과")
-            print(f"   ※ 참고용 (도메인 차이로 수치 과대 추정 가능)")
-            print(f"   {'부위':<12} {'비정상률':>8}  상태")
-            print(f"   {'-'*32}")
-            for part, kr in [('head','머리'), ('acrosome','첨체'),
-                              ('vacuole','공포'), ('tail','꼬리')]:
-                rate = m['abnormal_rates'][part]
-                flag = '⚠️ ' if rate >= 50 else '✅'
-                print(f"   {kr}({part:<10}) {rate:>6.1f}%  {flag}")
+            print(f"\n{'─'*W}")
+            print(f"【 정자 형태 분석 】")
+            print(f"{'─'*W}")
+            print(f"\n  분석된 정자: {m['n_analyzed']}개  |  "
+                  f"정상 형태: {m['n_normal']}개 "
+                  f"({m['normal_rate']:.1f}%)")
+            print(f"  ※ 참고용 수치 (도메인 차이로 과대 추정 가능)")
+
+            print(f"\n  부위별 이상 비율:")
+            part_names = {
+                'head':     '머리    (두부)',
+                'acrosome': '첨체    (머리 앞부분)',
+                'vacuole':  '공포    (머리 내 공간)',
+                'tail':     '꼬리    (미부)',
+            }
+            for p, name in part_names.items():
+                rate    = m['abnormal_rates'][p]
+                flag    = '⚠️ ' if rate >= 50 else '✅'
+                bar_str = '█' * int(rate / 5)
+                print(f"  {flag} {name:<22} 이상 {rate:>5.1f}%  "
+                      f"{bar_str}")
 
             status = mint.get('status', '-')
-            print(f"\n   정상 형태율: {m['normal_rate']:.1f}%"
-                  f"  →  {status}")
-            for line in mint.get('interpretations', []):
-                print(f"   {line}")
+            s_icons = {'정상 범위': '✅', '경계 범위': '⚠️ ', '주의 필요': '🔴'}
+            s_icon  = s_icons.get(status, '⚪')
+            print(f"\n  {s_icon} 정상 형태율: "
+                  f"{m['normal_rate']:.1f}%  →  {status}")
+            print(f"     (WHO 기준: 4% 이상이면 정상)")
 
-        print(f"\n{'─'*57}")
-        print(f"   ※ AI 보조 분석 / 의학적 진단 아님")
-        print(f"{'='*57}\n")
+        # ── 종합 판정 ─────────────────────────────────────
+        print(f"\n{'='*W}")
+        print(f"【 종합 판정 】")
+        print(f"{'='*W}")
+
+        o_icon   = result.get('overall_icon', '⚪')
+        o_status = result.get('overall_status', '-')
+        o_msg    = result.get('overall_message', '')
+        m_status = result['status']
+
+        mot_icons = {'정상 범위': '✅', '경계 범위': '⚠️ ', '주의 필요': '🔴'}
+        mot_icon  = mot_icons.get(m_status, '⚪')
+        print(f"\n  운동성 판정:  {mot_icon} {m_status}")
+
+        if result.get('morphology'):
+            m_s     = result.get('morphology_interp', {}).get('status', '-')
+            m_icons = {'정상 범위': '✅', '경계 범위': '⚠️ ', '주의 필요': '🔴'}
+            m_i     = m_icons.get(m_s, '⚪')
+            print(f"  형태 판정:    {m_i} {m_s}  ※참고용")
+
+        print(f"\n  {o_icon} 최종 판정: [{o_status}]")
+        print(f"\n  💬 권고사항:")
+        print(f"   {o_msg}")
+
+        # ── 안내 문구 ─────────────────────────────────────
+        print(f"\n{'─'*W}")
+        print(f"  ⚠️  주의사항")
+        print(f"  이 결과는 AI 보조 분석이며 의학적 진단이 아닙니다.")
+        print(f"  정확한 진단은 반드시 전문 의료기관에서 받으시기 바랍니다.")
+        print(f"{'='*W}\n")
