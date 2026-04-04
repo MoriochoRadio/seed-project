@@ -1,24 +1,28 @@
-# 🔬 AI-Based Sperm Motility Analysis System
+# 🔬 AI-CASA: AI 기반 정자 종합 분석 시스템
 
-> **병원 전 단계 보조 분석 시스템** — 정자 현미경 영상을 입력받아 AI로 운동성을 자동 분석하고 WHO 기준 기반 설명형 결과를 출력합니다.
+> 정자 현미경 영상을 입력받아 **운동성 · 운동 패턴 · 형태**를 자동 분석하고
+> WHO 기준 기반 설명형 결과를 출력하는 병원 전 단계 보조 분석 시스템
 
 [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.6.0-orange)](https://pytorch.org)
 [![YOLO](https://img.shields.io/badge/YOLO-11-darkgreen)](https://ultralytics.com)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Phase](https://img.shields.io/badge/Phase-3%20Complete-brightgreen)]()
 
 ---
 
 ## 📌 프로젝트 소개
 
-이 프로젝트는 **정자 현미경 영상**을 입력받아:
+이 프로젝트는 **정자 현미경 영상** 하나만 있으면:
 
-1. **YOLO11**로 정자를 프레임별로 탐지
-2. **ByteTrack**으로 정자의 이동 경로를 추적
-3. **앙상블 회귀 모델**로 운동성 수치 예측
-4. **WHO 6판 기준**으로 결과 해석 및 설명형 보고서 출력
+1. **YOLO11** 로 정자를 프레임별 자동 탐지
+2. **ByteTrack** 으로 정자 이동 경로 추적
+3. **앙상블 회귀 모델** 로 운동성 수치 예측
+4. **CASA 키네마틱** (VCL, VSL, VAP, LIN, STR, WOB, ALH) 계산
+5. **EfficientNet-B3** 로 정자 형태 분류 (머리/첨체/공포/꼬리)
+6. **WHO 6판 기준** 으로 종합 해석 및 설명형 보고서 출력
 
-을 수행하는 **병원 전 단계 보조 분석 시스템**입니다.
+을 자동으로 수행합니다.
 
 > ⚠️ 본 시스템은 의학적 진단 도구가 아닙니다. 병원 방문 전 참고용 보조 분석 도구입니다.
 
@@ -28,11 +32,12 @@
 
 | 지표 | 본 시스템 | 논문 최고 (motilitAI) |
 |---|---|---|
-| 5-Fold CV MAE | **6.9%p** | 7.31%p |
-| YOLO mAP50 | **0.677** | ~0.65 (YOLOv5l) |
-| 판정 방향 정확도 | **75%** | — |
+| 운동성 MAE (5-Fold CV) | **6.9%p** | 7.31%p |
+| YOLO11 mAP50 | **0.677** | ~0.65 (YOLOv5l) |
+| 형태 분류 AUC (평균) | **0.725** | — |
+| 판정 방향 정확도 | **75~100%** | — |
 
-> 동일 데이터셋(VISEM) 기준으로 논문 최고 성능을 초과 달성
+> 동일 데이터셋(VISEM) 기준으로 운동성 분석은 논문 최고 성능을 초과 달성
 
 ---
 
@@ -42,67 +47,81 @@
 현미경 영상 입력 (.mp4 / .avi)
          │
          ▼
-┌─────────────────────────────────┐
-│         SpermDetector           │
-│         (detector.py)           │
-│  YOLO11 기반 정자 탐지           │
-│  → 프레임별 정자 위치 검출        │
-│  → 전체 정자 수 N 추정 (중앙값)   │
-└─────────────────────────────────┘
+┌─────────────────────────────┐
+│      SpermDetector          │  YOLO11 정자 탐지
+│      (detector.py)          │  → 전체 정자 수 N 추정
+└─────────────────────────────┘
          │
          ▼
-┌─────────────────────────────────┐
-│         SpermTracker            │
-│         (tracker.py)            │
-│  ByteTrack 기반 정자 추적        │
-│  → 정자별 이동 경로 (trajectory) │
-│  → 11개 운동성 특징 추출         │
-└─────────────────────────────────┘
+┌─────────────────────────────┐
+│      SpermTracker           │  ByteTrack 정자 추적
+│      (tracker.py)           │  → 이동 경로 + CASA 키네마틱
+└─────────────────────────────┘
          │
-         ▼
-┌─────────────────────────────────┐
-│       MotilityAnalyzer          │
-│        (analyzer.py)            │
-│  앙상블 회귀 모델                 │
-│  Ridge + RandomForest 평균       │
-│  → 전진 운동성 %                 │
-│  → 비전진 운동성 %               │
-│  → 비운동성 %                    │
-└─────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│       interpreter.py            │
-│  WHO 6판 기준 해석               │
-│  → 정상/경계/주의 판정            │
-│  → 신뢰도 점수 (0~100점)         │
-│  → 재촬영 권고 여부              │
-└─────────────────────────────────┘
-         │
-         ▼
-    📋 설명형 보고서 출력
+         ├──────────────────────────────────┐
+         ▼                                  ▼
+┌──────────────────────┐     ┌──────────────────────────┐
+│   MotilityAnalyzer   │     │   MorphologyAnalyzer     │
+│   (analyzer.py)      │     │   (morphology.py)        │
+│  Ridge+RF 앙상블      │     │  EfficientNet-B3 v3      │
+│  → 운동성 % 예측      │     │  → 형태 정상/비정상 분류  │
+└──────────────────────┘     └──────────────────────────┘
+         │                                  │
+         └──────────────┬───────────────────┘
+                        ▼
+          ┌─────────────────────────┐
+          │     interpreter.py      │
+          │  WHO 6판 기준 해석       │
+          │  → 판정 + 신뢰도 + 권고  │
+          └─────────────────────────┘
+                        │
+                        ▼
+               📋 AI-CASA 통합 보고서
 ```
 
 ---
 
-## 📊 WHO 기준 판정 로직
+## 📊 출력 보고서 예시
 
 ```
-WHO 6판 (2021) 기준:
+============================================================
+  🔬 AI 정자 분석 보고서
+============================================================
 
-전진 운동성 (Progressive Motility)
-  ≥ 32%  →  ✅ 정상
-  22~32% →  ⚠️  경계
-  < 22%  →  🔴 주의
+【 분석 품질 】
+  ✅ 신뢰도: 높음 (100점 / 100점)
 
-총 운동성 (Total Motility)
-  ≥ 40%  →  ✅ 정상
-  < 40%  →  ⚠️  주의
+────────────────────────────────────────────────────────────
+【 정자 운동성 분석 】  (탐지된 정자: 50개)
+────────────────────────────────────────────────────────────
 
-비운동성 (Immotile)
-  < 50%  →  ✅ 정상
-  50~70% →  ⚠️  주의
-  ≥ 70%  →  🔴 심각
+  앞으로 잘 나아가는 정자  (전진 운동성):   21.4%  ████
+  조금 움직이는 정자      (비전진 운동성): 26.2%  ░░░░░
+  움직이지 않는 정자      (비운동성):      52.4%  ··········
+  ─────────────────────────────────────────────
+  전체 움직이는 정자      (총 운동성):     47.6%
+
+  📋 WHO 기준 검토 결과
+     🔴 전진 운동성 21.4% — WHO 정상 기준보다 현저히 낮음
+     ✅ 총 운동성 47.6% — 정상 (기준 40% 이상)
+     ⚠️  비운동성 52.4% — 움직이지 않는 정자 비율이 높음
+
+────────────────────────────────────────────────────────────
+【 정자 형태 분석 】
+────────────────────────────────────────────────────────────
+
+  분석된 정자: 1677개  |  정상 형태: 139개 (8.3%)
+  ⚠️  머리    (두부)          이상  86.2%  █████████████████
+  ⚠️  첨체    (머리 앞부분)    이상  80.7%  ████████████████
+  ✅  공포    (머리 내 공간)   이상  31.2%  ██████
+  ✅  꼬리    (미부)          이상  18.8%  ███
+
+============================================================
+【 종합 판정 】
+============================================================
+  🔴 최종 판정: [전문의 상담 권고]
+  💬 정확한 진단을 위해 비뇨의학과 방문을 강력히 권고합니다.
+============================================================
 ```
 
 ---
@@ -123,45 +142,14 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install -r requirements.txt
 ```
 
-### 2. 영상 분석 (3줄)
+### 2. 분석 실행 (3줄)
 
 ```python
 from src.pipeline import SpermAnalysisPipeline
 
 pipeline = SpermAnalysisPipeline()
-result   = pipeline.analyze("your_video.mp4")
+result   = pipeline.analyze('video.mp4')
 pipeline.print_report(result)
-```
-
-### 3. 출력 예시
-
-```
-=======================================================
-  정자 운동성 분석 보고서
-=======================================================
-📊 분석 신뢰도: ✅ 높음 (100점)
-
-📈 운동성 분석 결과 (탐지 정자 수: 50개)
-   전진 운동성:    21.4%
-   비전진 운동성:  26.2%
-   비운동성:       52.4%
-   총 운동성:      47.6%
-
-🔍 WHO 기준 해석
-   🔴 전진 운동성 21.4% — WHO 정상 기준(32%)보다 현저히 낮음
-   ✅ 총 운동성 47.6%   — WHO 정상 기준(40%) 충족
-   ⚠️  비운동성 52.4%  — 주의 필요 (기준 50% 초과)
-
-🔴 종합 판정: [주의 필요]
-
-💬 권고사항:
-   AI 분석 결과 일부 지표가 WHO 기준 이하입니다.
-   정밀 검사를 위해 병원 방문을 권고합니다.
-   이 결과는 보조 분석이며 의학적 진단을 대체하지 않습니다.
-
--------------------------------------------------------
-   ※ 이 결과는 AI 보조 분석이며 의학적 진단이 아닙니다.
-=======================================================
 ```
 
 ---
@@ -170,38 +158,21 @@ pipeline.print_report(result)
 
 ```
 sperm-ai/
-├── data/
-│   ├── raw/
-│   │   ├── VISEM-Tracking/       # 20명, 바운딩박스 어노테이션
-│   │   └── VISEM/                # 85명, 영상 + CSV
-│   └── processed/
-│       ├── yolo_dataset/         # YOLO 학습 데이터
-│       └── yolo_balanced/        # 균형 데이터
+├── src/
+│   ├── detector.py       # SpermDetector  (YOLO11)
+│   ├── tracker.py        # SpermTracker   (ByteTrack + CASA)
+│   ├── analyzer.py       # MotilityAnalyzer (앙상블 회귀)
+│   ├── morphology.py     # MorphologyAnalyzer (EfficientNet-B3)
+│   ├── interpreter.py    # WHO 해석 + 신뢰도 + 종합 판정
+│   └── pipeline.py       # SpermAnalysisPipeline (통합)
 ├── models/
-│   ├── yolo11_sperm_v2/
-│   │   └── weights/best.pt       # YOLO11 탐지 모델
-│   └── motility_ensemble.pkl     # 앙상블 회귀 모델
-├── notebooks/                    # 실험 기록 노트북
-│   ├── 01_check_environment.ipynb
-│   ├── 04_train_yolo11.ipynb
-│   ├── 09_motility_regression.ipynb
-│   ├── 10_visem_features.ipynb
-│   ├── 13_final_system.ipynb
-│   └── ...
-├── outputs/
-│   ├── visem_features.json       # 85명 추출 특징
-│   ├── final_validation_report.csv
-│   └── result_participant_11.mp4 # 시각화 결과 영상
-├── src/                          # 핵심 모듈
-│   ├── __init__.py
-│   ├── detector.py               # SpermDetector 클래스
-│   ├── tracker.py                # SpermTracker 클래스
-│   ├── analyzer.py               # MotilityAnalyzer 클래스
-│   ├── interpreter.py            # WHO 해석 + 신뢰도
-│   └── pipeline.py               # 통합 파이프라인 (메인)
+│   ├── yolo11_sperm_v2/              # YOLO11 탐지 모델
+│   ├── motility_ensemble.pkl         # 운동성 회귀 모델
+│   └── morphology_efficientnet_b3_v3.pt  # 형태 분류 모델 (v3)
+├── notebooks/            # 실험 기록 노트북 (01~16번)
 ├── docs/
-│   ├── performance.md            # 상세 성능 분석
-│   └── architecture.md           # 시스템 설계 문서
+│   ├── performance.md    # 상세 성능 분석
+│   └── architecture.md   # 시스템 설계 문서
 ├── README.md
 ├── requirements.txt
 └── bytetrack_custom.yaml
@@ -211,20 +182,11 @@ sperm-ai/
 
 ## 🔬 사용 데이터셋
 
-### VISEM-Tracking
-- **출처**: Thambawita et al. (2023), SimulaMet / OsloMet
-- **참가자**: 20명
-- **내용**: 각 30초 영상 (640×480, 50fps) + 바운딩박스 + 추적 ID
-- **클래스**: sperm(0), cluster(1), small/pinhead(2)
-- **용도**: YOLO11 탐지 모델 학습
-- **라이센스**: CC BY 4.0
-
-### VISEM 원본
-- **출처**: Haugen et al. (2019), Simula Research Laboratory
-- **참가자**: 85명
-- **내용**: .avi 영상 + 운동성 CSV
-- **용도**: 앙상블 회귀 모델 학습 (바운딩박스는 YOLO11로 자동 생성)
-- **라이센스**: CC BY 4.0 (비상업적 사용)
+| 데이터셋 | 참가자 | 용도 | 특징 |
+|---|---|---|---|
+| VISEM-Tracking | 20명 | YOLO11 학습 | 바운딩박스 + 추적ID |
+| VISEM 원본 | 85명 | 회귀 모델 학습 | 영상 + 운동성 CSV |
+| MHSMA | 235명 (1,540장) | 형태 모델 학습 | 4부위 정상/비정상 레이블 |
 
 ---
 
@@ -238,31 +200,29 @@ sperm-ai/
 | CPU | Intel i7-12800HX |
 | Python | 3.10 |
 | PyTorch | 2.6.0 + CUDA 12.4 |
-| YOLO | YOLO11 (ultralytics) |
-| 추적기 | ByteTrack |
+| Detection | YOLO11 (ultralytics) |
+| Tracking | ByteTrack |
+| Morphology | EfficientNet-B3 (torchvision) |
 
 ---
 
-## 🗺️ 개발 로드맵
+## 📈 개발 로드맵
 
 ```
-Phase 1  ✅ 완료    운동성 분석 시스템
-                   YOLO11 탐지 + ByteTrack 추적
-                   앙상블 회귀 모델 (MAE 6.9%p)
-                   WHO 기준 해석 + 신뢰도 평가
-
-Phase 2  🔜 진행 예정   품질 평가 + 설명형 강화
-                        신뢰도 로직 정교화
-                        사용자 친화적 출력 개선
-
-Phase 3  📋 계획 중    형태 분석 (Morphology)
-                       정자 형태 이상 판별
-                       형태 + 운동성 결합 분석
-
-Phase 4  🎯 최종 목표  AI-CASA 통합 시스템
-                       운동성 + 형태 + 농도 + 신뢰도
-                       종합 보고서 자동 생성
+Phase 1  ✅ 완료   운동성 분석 (MAE 6.9%p, 논문 초과)
+Phase 2  ✅ 완료   CASA 키네마틱 (VCL/VSL/VAP/LIN/STR/WOB/ALH)
+Phase 3  ✅ 완료   형태 분석 (EfficientNet-B3, AUC 0.725)
+Phase 4  ✅ 완료   AI-CASA 통합 보고서 (일반인 친화적)
+Phase 5  🔜 예정   도메인 적응 개선 / 실데이터 검증
 ```
+
+---
+
+## ⚠️ 주의사항 및 한계
+
+- 이 시스템은 **의학적 진단 도구가 아닙니다**
+- 형태 분석은 MHSMA↔VISEM **도메인 차이**로 수치 과대 추정 가능성 있음
+- 최종 판단은 반드시 **전문 의료진**에게 받으시기 바랍니다
 
 ---
 
@@ -270,18 +230,15 @@ Phase 4  🎯 최종 목표  AI-CASA 통합 시스템
 
 ```bibtex
 @article{thambawita2023visem,
-  author  = {Thambawita, Vajira and Hicks, Steven A. and
-             Storås, Andrea M. and Nguyen, Thu and others},
+  author  = {Thambawita, Vajira and Hicks, Steven A. and others},
   title   = {VISEM-Tracking, a human spermatozoa tracking dataset},
   journal = {Scientific Data},
-  volume  = {10},
   year    = {2023},
   doi     = {10.1038/s41597-023-02173-4}
 }
 
 @article{ottl2022motilitai,
-  author  = {Ottl, Sandra and Amiriparian, Shahin and
-             Gerczuk, Maurice and Schuller, Björn},
+  author  = {Ottl, Sandra and Amiriparian, Shahin and others},
   title   = {motilitAI: A machine learning framework for automatic
              prediction of human sperm motility},
   journal = {iScience},
@@ -289,17 +246,18 @@ Phase 4  🎯 최종 목표  AI-CASA 통합 시스템
   doi     = {10.1016/j.isci.2022.104644}
 }
 
-@article{haugen2019visem,
-  author  = {Haugen, Trine B. and Hicks, Steven A. and
-             Andersen, Jorunn M. and others},
-  title   = {VISEM: A multimodal video dataset of human spermatozoa},
-  journal = {ACM Multimedia Systems Conference (MMSys)},
-  year    = {2019}
+@article{javadi2019mhsma,
+  author  = {Javadi, Shahin and Mirroshandel, Seyed Abolghasem},
+  title   = {A novel deep learning method for automatic assessment
+             of human sperm images},
+  journal = {Computers in Biology and Medicine},
+  year    = {2019},
+  doi     = {10.1016/j.compbiomed.2019.04.030}
 }
 
 @manual{who2021,
-  title  = {WHO laboratory manual for the examination
-            and processing of human semen, 6th edition},
+  title  = {WHO laboratory manual for the examination and
+            processing of human semen, Sixth Edition},
   author = {{World Health Organization}},
   year   = {2021}
 }
@@ -313,6 +271,4 @@ Phase 4  🎯 최종 목표  AI-CASA 통합 시스템
 
 ---
 
-## 👤 개발자
-
-1인 개인 프로젝트 | 문의: GitHub Issues
+*1인 개인 프로젝트 | 문의: GitHub Issues*
