@@ -1,54 +1,71 @@
-# Python
+# ── Python ────────────────────────────────────────
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*$py.class
+*.so
 .Python
-*.egg
 *.egg-info/
-dist/
-build/
-.eggs/
+.pytest_cache/
 
-# 가상환경
-.venv/
+# ── 가상환경 ──────────────────────────────────────
 venv/
 env/
+.venv/
+ENV/
 
-# Jupyter Notebook
-.ipynb_checkpoints/
-*.ipynb_checkpoints
-
-# 데이터 (용량 큰 파일 제외)
-data/raw/
-data/processed/
-outputs/*.mp4
-outputs/*.avi
-
-# 모델 가중치 (용량 큰 파일 제외)
-models/yolo11_sperm_v2/weights/
-models/*.pkl
-
-# 단, 설정 파일은 포함
-!bytetrack_custom.yaml
-
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# IDE
+# ── IDE ───────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+.cursorignore
 
-# 로그
-*.log
+# ── Jupyter ───────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── OS ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── 데이터셋 (용량 큼, 학습용) ────────────────────
+data/raw/
+data/processed/
+data/interim/
+*.npy
+*.pkl
+!models/motility_ensemble.pkl
+
+# ── 학습 결과물 ───────────────────────────────────
 runs/
+wandb/
+lightning_logs/
 
-# 임시 파일
-*.tmp
+# ── 영상 / 결과물 ─────────────────────────────────
+*.mp4
+*.avi
+*.mov
+*.mkv
+tmp_uploads/*
+!tmp_uploads/.gitkeep
+outputs/*
+!outputs/.gitkeep
+
+# ── 모델 가중치 (용량 큼, 별도 배포) ─────────────
+*.pt
+*.pth
+*.h5
+*.onnx
+*.pkl
+models/
+!models/.gitkeep
+!models/*.json
+
+# ── 문서 임시파일 ─────────────────────────────────
 *.bak
-*.pt 
+*.tmp
+~$*
+
+# ── 환경 변수 ─────────────────────────────────────
+.env
+*.local
