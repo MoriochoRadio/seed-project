@@ -1,0 +1,873 @@
+{% extends "base.html" %}
+
+{% block title %}분석 결과 — AI-CASA{% endblock %}
+
+{% block content %}
+<section class="result-section">
+
+    <!-- ── 종합 판정 배너 ──────────────────────────────── -->
+    {% set overall = result.overall_status or '-' %}
+    {% set overall_lvl = result.overall_level or 'normal' %}
+    <div class="verdict-banner verdict-{{ overall_lvl }}">
+        <div class="verdict-icon">{{ result.overall_icon or '⚪' }}</div>
+        <div class="verdict-content">
+            <div class="verdict-label">최종 판정</div>
+            <div class="verdict-status">{{ overall }}</div>
+            <div class="verdict-message">
+                {{ result.overall_message or '' }}
+            </div>
+        </div>
+        <a href="/" class="btn-new-analysis">+ 새로 분석</a>
+    </div>
+
+    <!-- ── 모드 토글 ──────────────────────────────────── -->
+    <div class="mode-toggle-wrap">
+        <div class="mode-toggle">
+            <button class="mode-btn active" data-mode="simple">
+                <span class="mode-icon">👁️</span>
+                <span>
+                    <strong>일반인용</strong>
+                    <small>친절한 설명과 함께</small>
+                </span>
+            </button>
+            <button class="mode-btn" data-mode="expert">
+                <span class="mode-icon">🔬</span>
+                <span>
+                    <strong>전문가용</strong>
+                    <small>수치 중심 요약</small>
+                </span>
+            </button>
+        </div>
+        <div class="mode-hint" id="mode-hint">
+            💡 일반인용 모드입니다. 각 수치의 의미를 자세히 설명합니다.
+        </div>
+    </div>
+    <!-- ── AI 검증 정보 박스 (일반인용에서만 표시) ───── -->
+    <div class="for-simple ai-trust-box">
+        <div class="ai-trust-header">
+            <div class="ai-trust-icon">🛡️</div>
+            <div class="ai-trust-title">
+                <strong>이 AI 시스템, 얼마나 믿을 수 있나요?</strong>
+                <small>학술 논문 수준의 검증을 거친 모델들로 구성되어 있습니다</small>
+            </div>
+            <button class="ai-trust-toggle" id="ai-trust-toggle">
+                <span class="toggle-text-show">자세히 보기 ▼</span>
+                <span class="toggle-text-hide">접기 ▲</span>
+            </button>
+        </div>
+
+        <div class="ai-trust-detail" id="ai-trust-detail">
+            <div class="ai-trust-grid">
+                <!-- 운동성 분석 -->
+                <div class="trust-item trust-strong">
+                    <div class="trust-badge">★★★ 매우 우수</div>
+                    <div class="trust-name">📊 운동성 분석</div>
+                    <div class="trust-metric">
+                        <strong>MAE 6.9%p</strong>
+                        <small>논문 최고 성능(7.31%p) 초과 달성</small>
+                    </div>
+                    <div class="trust-method">
+                        85명 데이터로 5-Fold 교차검증
+                    </div>
+                </div>
+
+                <!-- 정자 탐지 -->
+                <div class="trust-item trust-strong">
+                    <div class="trust-badge">★★★ 매우 우수</div>
+                    <div class="trust-name">🎯 정자 탐지</div>
+                    <div class="trust-metric">
+                        <strong>mAP50 0.677</strong>
+                        <small>YOLO11 — 논문 수준의 정확도</small>
+                    </div>
+                    <div class="trust-method">
+                        VISEM-Tracking 데이터셋으로 학습
+                    </div>
+                </div>
+
+                <!-- 형태 분석 -->
+                <div class="trust-item trust-mid">
+                    <div class="trust-badge">★★ 우수 (도메인 한계 있음)</div>
+                    <div class="trust-name">🧬 형태 분석</div>
+                    <div class="trust-metric">
+                        <strong>AUC 0.725</strong>
+                        <small>EfficientNet-B3 멀티태스크 분류</small>
+                    </div>
+                    <div class="trust-method">
+                        MHSMA(염색)↔실제(비염색) 도메인 차이로
+                        비정상이 다소 과대 측정될 수 있음
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-trust-footer">
+                <div class="footer-fact">
+                    <span class="footer-fact-icon">📚</span>
+                    <span>
+                        <strong>학술 비교 검증:</strong>
+                        동일 데이터셋에서 기존 논문(motilitAI)을
+                        능가하는 성능 달성
+                    </span>
+                </div>
+                <div class="footer-fact">
+                    <span class="footer-fact-icon">🔬</span>
+                    <span>
+                        <strong>참가자 단위 검증:</strong>
+                        학습에 사용된 사람과 검증에 사용된 사람을
+                        엄격히 분리 (참가자 단위 5-Fold)
+                    </span>
+                </div>
+                <div class="footer-fact">
+                    <span class="footer-fact-icon">⚠️</span>
+                    <span>
+                        <strong>정직한 한계 공개:</strong>
+                        도메인 차이, 영상 품질 의존성 등 알려진 한계를
+                        결과에 명시하여 과신을 방지
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 영상 정보 + 신뢰도 ──────────────────────────── -->
+    <div class="meta-grid">
+        <div class="meta-card">
+            <div class="meta-label">분석 영상</div>
+            <div class="meta-value file-tag">{{ video_name }}</div>
+        </div>
+        <div class="meta-card">
+            <div class="meta-label">탐지된 정자 수</div>
+            <div class="meta-value">
+                <strong>{{ result.N }}</strong> 개
+            </div>
+        </div>
+        <div class="meta-card confidence-card
+                    confidence-{{ 'high' if result.confidence_score >= 80
+                              else 'mid' if result.confidence_score >= 60
+                              else 'low' }}">
+            <div class="meta-label">분석 신뢰도</div>
+            <div class="meta-value confidence-bar-wrap">
+                <div class="confidence-num">
+                    {{ result.confidence_score }}<span>점</span>
+                </div>
+                <div class="confidence-bar-track">
+                    <div class="confidence-bar-fill"
+                         style="width: {{ result.confidence_score }}%;">
+                    </div>
+                </div>
+            </div>
+            <div class="meta-note">
+                {{ result.confidence_icon }} {{ result.confidence_level }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 신뢰도 이슈 -->
+    {% if result.quality_issues %}
+    <div class="quality-issues">
+        {% for issue in result.quality_issues %}
+        <div class="issue-item">⚠️ {{ issue }}</div>
+        {% endfor %}
+        {% if result.needs_retake %}
+        <div class="issue-item issue-warning">
+            🔄 재촬영을 권고합니다
+            (신뢰도가 낮아 결과가 부정확할 수 있습니다)
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ── 운동성 분석 ────────────────────────────────── -->
+    <div class="report-card">
+        <div class="card-header">
+            <h2>📊 정자 운동성 분석</h2>
+            <span class="who-badge">WHO 6판 기준</span>
+        </div>
+
+        <!-- ╭───── 일반인용 설명 박스 ─────╮ -->
+        <div class="for-simple explain-box">
+            <div class="explain-icon">💡</div>
+            <div class="explain-content">
+                <strong>운동성이란?</strong>
+                <p>
+                    정자가 얼마나 잘 움직이는지를 나타내는 지표입니다.
+                    정자는 난자에 도달하기 위해 <em>스스로 헤엄쳐야</em> 하므로,
+                    <em>앞으로 똑바로 잘 나아가는 정자가 많을수록</em>
+                    임신 가능성이 높아집니다.
+                </p>
+                <p class="explain-criteria">
+                    📋 <strong>WHO 6판 기준 (2021년)</strong>이 정상 범위로
+                    제시하는 수치:
+                </p>
+                <ul class="explain-list">
+                    <li>전진 운동성 — <strong>32% 이상</strong></li>
+                    <li>총 운동성 — <strong>40% 이상</strong></li>
+                    <li>비운동성 — <strong>50% 미만</strong> (낮을수록 좋음)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="motility-grid">
+            <!-- 도넛 차트 -->
+            <div class="motility-chart">
+                <canvas id="motility-donut" width="240" height="240"></canvas>
+                <div class="donut-center">
+                    <div class="donut-total">
+                        {{ "%.1f"|format(result.total_motile or 0) }}<span>%</span>
+                    </div>
+                    <div class="donut-label">총 운동성</div>
+                </div>
+            </div>
+
+            <!-- 수치 + 막대 -->
+            <div class="motility-bars">
+                {% set prog = result.progressive %}
+                {% set non_prog = result.non_progressive %}
+                {% set immotile = result.immotile %}
+
+                <div class="motility-row">
+                    <div class="motility-label">
+                        <span class="motility-dot dot-progressive"></span>
+                        앞으로 잘 나아가는 정자
+                        <small>(전진 운동성)</small>
+                    </div>
+                    <div class="motility-bar-wrap">
+                        <div class="motility-bar bar-progressive"
+                             style="width: {{ prog }}%;"></div>
+                    </div>
+                    <div class="motility-value">
+                        {{ "%.1f"|format(prog) }}<span>%</span>
+                    </div>
+                </div>
+
+                <div class="motility-row">
+                    <div class="motility-label">
+                        <span class="motility-dot dot-nonprog"></span>
+                        조금 움직이는 정자
+                        <small>(비전진 운동성)</small>
+                    </div>
+                    <div class="motility-bar-wrap">
+                        <div class="motility-bar bar-nonprog"
+                             style="width: {{ non_prog }}%;"></div>
+                    </div>
+                    <div class="motility-value">
+                        {{ "%.1f"|format(non_prog) }}<span>%</span>
+                    </div>
+                </div>
+
+                <div class="motility-row">
+                    <div class="motility-label">
+                        <span class="motility-dot dot-immotile"></span>
+                        움직이지 않는 정자
+                        <small>(비운동성)</small>
+                    </div>
+                    <div class="motility-bar-wrap">
+                        <div class="motility-bar bar-immotile"
+                             style="width: {{ immotile }}%;"></div>
+                    </div>
+                    <div class="motility-value">
+                        {{ "%.1f"|format(immotile) }}<span>%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ╭───── 일반인용 추가 설명 ─────╮ -->
+        <div class="for-simple meaning-grid">
+            <div class="meaning-card">
+                <div class="meaning-title">
+                    🟢 앞으로 잘 나아가는 정자
+                </div>
+                <div class="meaning-text">
+                    난자에 도달할 가능성이 가장 높은 정자입니다.
+                    똑바로 일정 속도 이상으로 헤엄치는 정자를 말합니다.
+                    <strong>이 비율이 높을수록 임신 가능성이 좋습니다.</strong>
+                </div>
+            </div>
+            <div class="meaning-card">
+                <div class="meaning-title">
+                    🔵 조금 움직이는 정자
+                </div>
+                <div class="meaning-text">
+                    움직이긴 하지만 제자리를 맴돌거나
+                    좌우로 흔들리기만 하는 정자입니다.
+                    <strong>난자까지 도달할 가능성은 낮습니다.</strong>
+                </div>
+            </div>
+            <div class="meaning-card">
+                <div class="meaning-title">
+                    ⚫ 움직이지 않는 정자
+                </div>
+                <div class="meaning-text">
+                    아예 움직이지 않거나 죽은 정자입니다.
+                    <strong>이 비율이 너무 높으면 정자 활력에
+                    문제가 있을 수 있습니다.</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- WHO 기준 해석 -->
+        <div class="interpretation-block">
+            <h4>🔍 WHO 기준 검토 결과</h4>
+            <ul class="interpretation-list">
+                {% for line in result.interpretation %}
+                <li>{{ line }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- ╭───── 일반인용 결과 요약 ─────╮ -->
+        <div class="for-simple result-summary
+                    {{ 'summary-good' if result.level == 'normal'
+                    else 'summary-warn' if result.level == 'warning'
+                    else 'summary-bad' }}">
+            <div class="summary-icon">
+                {% if result.level == 'normal' %}✅
+                {% elif result.level == 'warning' %}⚠️
+                {% else %}🔴{% endif %}
+            </div>
+            <div class="summary-content">
+                <strong>요약하면:</strong>
+                {% if result.level == 'normal' %}
+                    운동성이 WHO 정상 기준을 잘 충족하고 있습니다.
+                    현재 상태를 유지하시면 됩니다.
+                {% elif result.level == 'warning' %}
+                    일부 수치가 정상 기준에 약간 못 미치지만 심각한 수준은
+                    아닙니다. 생활 습관 개선(금연, 금주, 규칙적 운동, 균형
+                    잡힌 식사)으로 개선될 수 있습니다.
+                {% else %}
+                    여러 운동성 지표가 정상 기준보다 낮습니다.
+                    정확한 진단과 치료 방향을 위해 비뇨의학과 또는 난임클리닉
+                    전문의 상담이 필요합니다.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 키네마틱 분석 ──────────────────────────────── -->
+    {% if result.kinematics %}
+    {% set k = result.kinematics %}
+    <div class="report-card">
+        <div class="card-header">
+            <h2>🎯 정자 운동 패턴 (CASA 키네마틱)</h2>
+            <span class="who-badge">7가지 파라미터</span>
+        </div>
+
+        <!-- ╭───── 일반인용 설명 박스 ─────╮ -->
+        <div class="for-simple explain-box">
+            <div class="explain-icon">💡</div>
+            <div class="explain-content">
+                <strong>CASA 키네마틱이란?</strong>
+                <p>
+                    정자가 단순히 "움직이는지/안 움직이는지"만 보는 것이
+                    아니라, <em>얼마나 빠르게</em>, <em>얼마나 똑바로</em>,
+                    <em>어떤 패턴으로</em> 움직이는지를 7가지 수치로
+                    정밀하게 측정한 것입니다.
+                </p>
+                <p>
+                    같은 "운동성 정상"이라도 운동 패턴이 다를 수 있어요.
+                    예를 들어 어떤 정자는 빠르지만 빙빙 돌고, 어떤 정자는
+                    느리지만 똑바로 나아갑니다.
+                    키네마틱 분석은 이런 차이를 정량적으로 보여줍니다.
+                </p>
+                
+            </div>
+        </div>
+
+        <!-- 속도 지표 -->
+        <h4 class="kinematic-subtitle">⚡ 속도 지표</h4>
+
+        <!-- ╭───── 일반인용 속도 설명 ─────╮ -->
+        <div class="for-simple sub-explain">
+            정자가 <strong>얼마나 빠르게 움직이는지</strong>를
+            세 가지 방식으로 측정합니다. µm/s는 "1초당 마이크로미터"로,
+            정자 머리 길이(약 5µm)의 몇 배를 1초에 이동하는지 생각하면 쉬워요.
+        </div>
+
+        <div class="kinematic-grid">
+            <div class="kine-card {{ 'kine-ok' if k.VCL_mean >= 25
+                                else 'kine-warn' }}">
+                <div class="kine-name">VCL <small>곡선 속도</small></div>
+                <div class="kine-value">
+                    {{ "%.1f"|format(k.VCL_mean) }}
+                    <span>µm/s</span>
+                </div>
+                <div class="kine-ref">기준 ≥ 25 µm/s</div>
+                <!-- ╭─ 일반인용 ─╮ -->
+                <div class="for-simple kine-explain">
+                    실제로 헤엄친 <strong>전체 거리</strong> 기준 속도예요.
+                    구불구불하게 움직여도 다 합산됩니다.
+                </div>
+            </div>
+            <div class="kine-card {{ 'kine-ok' if k.VSL_mean >= 15
+                                else 'kine-warn' }}">
+                <div class="kine-name">VSL <small>직선 속도</small></div>
+                <div class="kine-value">
+                    {{ "%.1f"|format(k.VSL_mean) }}
+                    <span>µm/s</span>
+                </div>
+                <div class="kine-ref">기준 ≥ 15 µm/s</div>
+                <div class="for-simple kine-explain">
+                    출발점에서 도착점까지의 <strong>일직선 거리</strong>
+                    기준 속도예요. 실제로 얼마나 앞으로 나아갔는지 봅니다.
+                </div>
+            </div>
+            <div class="kine-card {{ 'kine-ok' if k.VAP_mean >= 20
+                                else 'kine-warn' }}">
+                <div class="kine-name">VAP <small>평균경로 속도</small></div>
+                <div class="kine-value">
+                    {{ "%.1f"|format(k.VAP_mean) }}
+                    <span>µm/s</span>
+                </div>
+                <div class="kine-ref">기준 ≥ 20 µm/s</div>
+                <div class="for-simple kine-explain">
+                    경로의 작은 흔들림은 무시하고 <strong>전체적인
+                    이동 흐름</strong>을 본 속도예요. VCL과 VSL의 중간값.
+                </div>
+            </div>
+        </div>
+
+        <!-- 운동 패턴 지표 -->
+        <h4 class="kinematic-subtitle">🌀 운동 패턴 지표</h4>
+
+        <!-- ╭───── 일반인용 패턴 설명 ─────╮ -->
+        <div class="for-simple sub-explain">
+            정자가 <strong>얼마나 효율적으로 똑바로</strong> 움직이는지를
+            나타내는 지표들입니다. 모두 0~1 사이 값으로,
+            <strong>1에 가까울수록 직선에 가깝게 움직인다</strong>는 의미예요.
+        </div>
+
+        <div class="kinematic-grid">
+            <div class="kine-card {{ 'kine-ok' if k.STR_mean >= 0.80
+                                else 'kine-warn' }}">
+                <div class="kine-name">STR <small>직진성</small></div>
+                <div class="kine-value">
+                    {{ "%.3f"|format(k.STR_mean) }}
+                </div>
+                <div class="kine-ref">기준 ≥ 0.80</div>
+                <div class="for-simple kine-explain">
+                    평균 경로 대비 <strong>실제로 얼마나 직선에 가깝게
+                    움직였는지</strong>를 봐요. 임신에 가장 중요한 지표.
+                </div>
+            </div>
+            <div class="kine-card {{ 'kine-ok' if k.LIN_mean >= 0.50
+                                else 'kine-warn' }}">
+                <div class="kine-name">LIN <small>직선성</small></div>
+                <div class="kine-value">
+                    {{ "%.3f"|format(k.LIN_mean) }}
+                </div>
+                <div class="kine-ref">기준 ≥ 0.50</div>
+                <div class="for-simple kine-explain">
+                    실제 헤엄친 거리 대비 <strong>전진한 거리 비율</strong>
+                    이에요. 0.5 미만이면 빙빙 돌고 있단 뜻.
+                </div>
+            </div>
+            <div class="kine-card {{ 'kine-ok' if k.WOB_mean >= 0.70
+                                else 'kine-warn' }}">
+                <div class="kine-name">WOB <small>진동도</small></div>
+                <div class="kine-value">
+                    {{ "%.3f"|format(k.WOB_mean) }}
+                </div>
+                <div class="kine-ref">기준 ≥ 0.70</div>
+                <div class="for-simple kine-explain">
+                    좌우로 <strong>얼마나 흔들리며 움직이는지</strong>
+                    측정해요. 너무 흔들리면 효율이 떨어집니다.
+                </div>
+            </div>
+        </div>
+
+        <!-- ╭───── 일반인용 종합 해석 ─────╮ -->
+        {% set issues = 0 %}
+        {% if k.VCL_mean < 25 %}{% set issues = issues + 1 %}{% endif %}
+        {% if k.VSL_mean < 15 %}{% set issues = issues + 1 %}{% endif %}
+        {% if k.VAP_mean < 20 %}{% set issues = issues + 1 %}{% endif %}
+        {% if k.STR_mean < 0.80 %}{% set issues = issues + 1 %}{% endif %}
+        {% if k.LIN_mean < 0.50 %}{% set issues = issues + 1 %}{% endif %}
+
+        <div class="for-simple result-summary
+                    {{ 'summary-good' if issues == 0
+                    else 'summary-warn' if issues <= 2
+                    else 'summary-bad' }}">
+            <div class="summary-icon">
+                {% if issues == 0 %}✅
+                {% elif issues <= 2 %}⚠️
+                {% else %}🔴{% endif %}
+            </div>
+            <div class="summary-content">
+                <strong>요약하면:</strong>
+                {% if issues == 0 %}
+                    7가지 키네마틱 지표가 대부분 정상 범위에 있습니다.
+                    정자의 운동 패턴이 효율적이고 안정적이에요.
+                {% elif issues <= 2 %}
+                    일부 지표가 기준에 미치지 못합니다.
+                    {% if k.STR_mean < 0.80 or k.LIN_mean < 0.50 %}
+                    특히 직선으로 나아가는 능력이 다소 부족합니다 —
+                    정자가 움직이긴 하지만 효율적으로 직선 이동하지
+                    못한다는 의미입니다.
+                    {% endif %}
+                {% else %}
+                    여러 지표에서 기준 미달 결과가 나왔습니다.
+                    정자의 속도와 운동 패턴 모두 임상적 검토가 필요한
+                    수준이므로 전문의 상담을 권고합니다.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── 형태 분석 ──────────────────────────────────── -->
+    {% if result.morphology %}
+    {% set m = result.morphology %}
+    {% set mi = result.morphology_interp %}
+    <div class="report-card">
+        <div class="card-header">
+            <h2>🧬 정자 형태 분석</h2>
+            <span class="who-badge">EfficientNet-B3</span>
+        </div>
+
+        <!-- ╭───── 일반인용 설명 박스 ─────╮ -->
+        <div class="for-simple explain-box">
+            <div class="explain-icon">💡</div>
+            <div class="explain-content">
+                <strong>정자 형태 분석이란?</strong>
+                <p>
+                    정자가 <em>제대로 된 모양</em>을 갖추고 있는지를 확인하는
+                    검사입니다. 모양이 비정상적인 정자는 헤엄을 잘 못 치거나,
+                    난자에 도달해도 결합하지 못할 수 있어요.
+                </p>
+                <p>
+                    AI가 정자 한 마리 한 마리를 4가지 부위로 나눠서 분석합니다:
+                </p>
+                <ul class="explain-list">
+                    <li>
+                        <strong>머리(두부)</strong> — DNA가 들어있는 가장
+                        중요한 부분. 모양이 너무 크거나 작으면 비정상
+                    </li>
+                    <li>
+                        <strong>첨체(머리 앞부분)</strong> — 난자 외벽을
+                        뚫는 효소가 있는 곳. 손상되면 수정 불가
+                    </li>
+                    <li>
+                        <strong>공포(머리 내부 공간)</strong> — 머리 안에
+                        있는 빈 공간. 너무 크면 DNA에 문제 있을 수 있음
+                    </li>
+                    <li>
+                        <strong>꼬리(미부)</strong> — 헤엄치는 데 사용.
+                        구부러지거나 짧으면 운동성 저하
+                    </li>
+                </ul>
+                <p class="explain-criteria">
+                    📋 <strong>WHO 6판 기준</strong>:
+                    정상 형태 정자가 <strong>4% 이상</strong>이면 정상으로
+                    봅니다. 100마리 중 4마리만 정상이어도 충분하다는 의미인데,
+                    그만큼 정자는 원래 비정상이 많은 게 일반적이에요.
+                </p>
+            </div>
+        </div>
+
+        <!-- ╭───── 일반인용 도메인 한계 안내 ─────╮ -->
+        <div class="for-simple notice-box">
+            <div class="notice-icon">⚠️</div>
+            <div class="notice-content">
+                <strong>참고하실 점</strong>
+                <p>
+                    형태 분석 모델은 <strong>염색된 정자 표본 데이터</strong>로
+                    학습했지만, 우리 시스템은 <strong>비염색 살아있는
+                    정자</strong>에 적용합니다. 그래서 비정상 비율이 실제보다
+                    <em>높게 측정될 수 있습니다</em>. 절대 수치보다는
+                    <em>전반적인 경향</em>을 참고로 보시는 게 정확합니다.
+                </p>
+            </div>
+        </div>
+
+        <div class="morphology-summary">
+            <div class="morph-stat">
+                <div class="morph-stat-num">{{ m.n_analyzed }}</div>
+                <div class="morph-stat-label">분석 정자</div>
+            </div>
+            <div class="morph-stat">
+                <div class="morph-stat-num accent">
+                    {{ m.n_normal }}
+                </div>
+                <div class="morph-stat-label">정상 형태</div>
+            </div>
+            <div class="morph-stat">
+                <div class="morph-stat-num">
+                    {{ "%.1f"|format(m.normal_rate) }}<span>%</span>
+                </div>
+                <div class="morph-stat-label">
+                    정상 형태율 <small>(WHO ≥4%)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="morphology-disclaimer">
+            ※ 참고용 수치 (도메인 차이로 과대 추정 가능)
+        </div>
+
+        <h4 class="kinematic-subtitle">📍 부위별 이상 비율</h4>
+
+        <!-- ╭───── 일반인용 부위 설명 ─────╮ -->
+        <div class="for-simple sub-explain">
+            아래 막대는 <strong>각 부위별로 비정상이 발견된 정자 비율</strong>
+            이에요. 색상은 빨강(주의)/주황(경계)/초록(양호)으로 표시됩니다.
+            <strong>이 수치는 도메인 차이로 다소 과대 측정될 수 있으니
+            상대적 비교로만 참고</strong>해주세요.
+        </div>
+
+        <div class="morph-bars">
+            {% set parts = [
+                ('head',     '머리',   '두부 — DNA 보관'),
+                ('acrosome', '첨체',   '머리 앞 — 난자 침투'),
+                ('vacuole',  '공포',   '머리 내부 빈 공간'),
+                ('tail',     '꼬리',   '미부 — 헤엄 담당')
+            ] %}
+            {% for key, kr, en in parts %}
+            {% set rate = m.abnormal_rates[key] %}
+            <div class="morph-bar-row">
+                <div class="morph-bar-label">
+                    <strong>{{ kr }}</strong>
+                    <small>{{ en }}</small>
+                </div>
+                <div class="morph-bar-track">
+                    <div class="morph-bar-fill
+                                {{ 'morph-bad' if rate >= 50
+                                else 'morph-mid' if rate >= 30
+                                else 'morph-ok' }}"
+                         style="width: {{ rate }}%;"></div>
+                </div>
+                <div class="morph-bar-value">
+                    이상 {{ "%.1f"|format(rate) }}%
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- ╭───── 일반인용 종합 해석 ─────╮ -->
+        {% set normal_rate = m.normal_rate %}
+        <div class="for-simple result-summary
+                    {{ 'summary-good' if normal_rate >= 14
+                    else 'summary-warn' if normal_rate >= 4
+                    else 'summary-bad' }}">
+            <div class="summary-icon">
+                {% if normal_rate >= 14 %}✅
+                {% elif normal_rate >= 4 %}⚠️
+                {% else %}🔴{% endif %}
+            </div>
+            <div class="summary-content">
+                <strong>요약하면:</strong>
+                {% if normal_rate >= 14 %}
+                    정상 형태 정자 비율이 일반 가임 남성 평균 범위
+                    (보통 14~25%)에 들어와 있습니다.
+                    형태적으로 큰 문제는 없어 보입니다. ✅
+                {% elif normal_rate >= 4 %}
+                    WHO 최소 기준(4%)은 충족하지만, 일반 가임 남성 평균
+                    (보통 14~25%) 대비 여유가 크지 않은 수준입니다.
+                    <br><br>
+                    💡 <strong>참고:</strong> 위에 안내드린 도메인 차이로
+                    실제 측정값은 표시된 수치보다 더 좋을 가능성이 큽니다.
+                    그래도 정확한 진단은 병원에서 받으시기 바랍니다.
+                {% else %}
+                    정상 형태 정자 비율이 WHO 최소 기준(4%)에 미치지
+                    못했습니다. 다만 우리 시스템은 도메인 차이로 비정상
+                    비율을 실제보다 높게 측정하는 경향이 있어요.
+                    <br><br>
+                    💡 <strong>운동성 결과와 함께 종합적으로</strong>
+                    전문의 상담을 받으시는 것을 권고합니다.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── 종합 판정 근거 박스 (일반인용 전용) ────── -->
+    <div class="for-simple verdict-reason-card">
+        <div class="verdict-reason-header">
+            <div class="reason-icon">🔍</div>
+            <div class="reason-title">
+                <strong>왜 이런 판정이 나왔나요?</strong>
+                <small>최종 판정의 근거를 항목별로 정리했습니다</small>
+            </div>
+        </div>
+
+        <!-- 3가지 평가 항목 -->
+        <div class="reason-grid">
+            <!-- 운동성 -->
+            {% set mot_lvl = result.level %}
+            <div class="reason-item
+                        {{ 'reason-good' if mot_lvl == 'normal'
+                        else 'reason-warn' if mot_lvl == 'warning'
+                        else 'reason-bad' }}">
+                <div class="reason-item-head">
+                    <span class="reason-status-icon">
+                        {% if mot_lvl == 'normal' %}✅
+                        {% elif mot_lvl == 'warning' %}⚠️
+                        {% else %}🔴{% endif %}
+                    </span>
+                    <strong>운동성 분석</strong>
+                </div>
+                <div class="reason-item-status">
+                    {{ result.status }}
+                </div>
+                <div class="reason-item-detail">
+                    {% if mot_lvl == 'normal' %}
+                    전진/총/비운동성 모두 WHO 기준을 잘 충족했습니다.
+                    {% elif mot_lvl == 'warning' %}
+                    일부 운동성 수치가 WHO 기준에 미치지 못했습니다.
+                    {% else %}
+                    여러 운동성 수치가 WHO 기준 이하로 측정되었습니다.
+                    {% endif %}
+                </div>
+                <div class="reason-item-impact">
+                    <span class="impact-label">결과에 미친 영향:</span>
+                    <span class="impact-value
+                                impact-{{ 'low' if mot_lvl == 'normal'
+                                       else 'mid' if mot_lvl == 'warning'
+                                       else 'high' }}">
+                        {% if mot_lvl == 'normal' %}없음 (긍정적)
+                        {% elif mot_lvl == 'warning' %}중간
+                        {% else %}큼{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- 형태 -->
+            {% if result.morphology %}
+            {% set morph_lvl = result.morphology_interp.level if
+                                result.morphology_interp else 'normal' %}
+            {% set morph_status = result.morphology_interp.status if
+                                   result.morphology_interp else '-' %}
+            <div class="reason-item
+                        {{ 'reason-good' if morph_lvl == 'normal'
+                        else 'reason-warn' if morph_lvl == 'warning'
+                        else 'reason-bad' }}">
+                <div class="reason-item-head">
+                    <span class="reason-status-icon">
+                        {% if morph_lvl == 'normal' %}✅
+                        {% elif morph_lvl == 'warning' %}⚠️
+                        {% else %}🔴{% endif %}
+                    </span>
+                    <strong>형태 분석</strong>
+                    <span class="ref-tag">※참고용</span>
+                </div>
+                <div class="reason-item-status">
+                    {{ morph_status }}
+                </div>
+                <div class="reason-item-detail">
+                    정상 형태율
+                    <strong>{{ "%.1f"|format(result.morphology.normal_rate) }}%</strong>
+                    측정됨 (WHO 기준 ≥4%)
+                </div>
+                <div class="reason-item-impact">
+                    <span class="impact-label">결과에 미친 영향:</span>
+                    <span class="impact-value impact-low">
+                        제한적 (도메인 한계)
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 신뢰도 -->
+            {% set conf = result.confidence_score %}
+            <div class="reason-item
+                        {{ 'reason-good' if conf >= 80
+                        else 'reason-warn' if conf >= 60
+                        else 'reason-bad' }}">
+                <div class="reason-item-head">
+                    <span class="reason-status-icon">
+                        {% if conf >= 80 %}✅
+                        {% elif conf >= 60 %}⚠️
+                        {% else %}🔴{% endif %}
+                    </span>
+                    <strong>분석 신뢰도</strong>
+                </div>
+                <div class="reason-item-status">
+                    {{ conf }}점 — {{ result.confidence_level }}
+                </div>
+                <div class="reason-item-detail">
+                    {% if conf >= 80 %}
+                    탐지된 정자 수와 추적 안정성이 충분합니다.
+                    {% elif conf >= 60 %}
+                    분석 가능하지만 정자 수가 적거나 영상 품질이
+                    완벽하지 않았습니다.
+                    {% else %}
+                    정자 수 부족 또는 영상 품질 문제로 결과 신뢰도가
+                    낮습니다.
+                    {% endif %}
+                </div>
+                <div class="reason-item-impact">
+                    <span class="impact-label">결과에 미친 영향:</span>
+                    <span class="impact-value
+                                impact-{{ 'low' if conf >= 80
+                                       else 'mid' if conf >= 60
+                                       else 'high' }}">
+                        {% if conf >= 80 %}없음
+                        {% elif conf >= 60 %}중간 — 참고용 권장
+                        {% else %}큼 — 재검사 필요{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 종합 결론 -->
+        <div class="reason-conclusion
+                    verdict-{{ result.overall_level or 'normal' }}">
+            <div class="conclusion-icon">
+                {{ result.overall_icon or '⚪' }}
+            </div>
+            <div class="conclusion-text">
+                <strong>종합 결론:</strong>
+                {% set ov = result.overall_level %}
+                {% if ov == 'normal' %}
+                위 세 가지 평가 항목 모두 양호한 결과를 보였습니다.
+                현재 상태를 유지하시면 됩니다.
+                {% elif ov == 'warning' %}
+                위 세 항목 중 일부에서 주의 지표가 발견되어
+                <strong>"{{ result.overall_status }}"</strong>로
+                판정되었습니다. 심각한 수준은 아니지만 생활 습관 개선과
+                전문의 상담을 권고합니다.
+                {% elif ov == 'severe' %}
+                위 세 항목 중 여러 곳에서 주의 지표가 나와
+                <strong>"{{ result.overall_status }}"</strong>로
+                판정되었습니다. 이 결과는 AI 보조 분석이며 최종 진단은
+                전문 의료기관에서 받으시기 바랍니다.
+                {% elif ov == 'uncertain' %}
+                분석 신뢰도가 낮아 결과를 확정하기 어렵습니다.
+                <strong>재촬영 후 재분석</strong>을 권고합니다.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- ── 면책 문구 ──────────────────────────────────── -->
+    <div class="disclaimer-box">
+        <div class="disclaimer-icon">⚠️</div>
+        <div class="disclaimer-text">
+            <strong>주의사항</strong>
+            이 결과는 AI 보조 분석이며 의학적 진단이 아닙니다.
+            정확한 진단은 반드시 전문 의료기관에서 받으시기 바랍니다.
+        </div>
+    </div>
+
+    <!-- 다시 분석 버튼 -->
+    <div class="action-buttons">
+        <a href="/" class="btn-action btn-primary">
+            🔬 새 영상 분석하기
+        </a>
+        <button class="btn-action btn-secondary" onclick="window.print()">
+            🖨️ 보고서 인쇄
+        </button>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 도넛 차트 데이터 (서버에서 전달받은 값)
+    window.MOTILITY_DATA = {
+        progressive:     {{ result.progressive }},
+        non_progressive: {{ result.non_progressive }},
+        immotile:        {{ result.immotile }},
+    };
+</script>
+<script src="{{ url_for('static', filename='js/result.js') }}"></script>
+{% endblock %}

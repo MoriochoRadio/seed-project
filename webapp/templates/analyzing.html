@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}분석 중... — AI-CASA{% endblock %}
+
+{% block content %}
+<section class="analyzing-section">
+    <!-- 헤더 영역 -->
+    <div class="analyzing-header">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-icon">🔬</div>
+        </div>
+        <h1 class="analyzing-title">AI 분석 진행 중</h1>
+        <p class="analyzing-subtitle">
+            <span class="video-name">{{ video_name }}</span>
+        </p>
+    </div>
+
+    <!-- 진행률 바 -->
+    <div class="progress-card">
+        <div class="progress-info">
+            <span class="progress-stage" id="stage-text">대기 중</span>
+            <span class="progress-percent" id="percent-text">0%</span>
+        </div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <!-- 5단계 시각화 -->
+    <div class="stages-grid">
+        <div class="stage-item" data-stage="1">
+            <div class="stage-circle">
+                <span class="stage-icon">🎯</span>
+                <span class="stage-check">✓</span>
+            </div>
+            <div class="stage-label">정자 탐지</div>
+            <div class="stage-tech">YOLO11</div>
+        </div>
+        <div class="stage-line"></div>
+
+        <div class="stage-item" data-stage="2">
+            <div class="stage-circle">
+                <span class="stage-icon">📍</span>
+                <span class="stage-check">✓</span>
+            </div>
+            <div class="stage-label">정자 추적</div>
+            <div class="stage-tech">ByteTrack</div>
+        </div>
+        <div class="stage-line"></div>
+
+        <div class="stage-item" data-stage="3">
+            <div class="stage-circle">
+                <span class="stage-icon">📊</span>
+                <span class="stage-check">✓</span>
+            </div>
+            <div class="stage-label">운동성 분석</div>
+            <div class="stage-tech">Ridge + RF</div>
+        </div>
+        <div class="stage-line"></div>
+
+        <div class="stage-item" data-stage="4">
+            <div class="stage-circle">
+                <span class="stage-icon">🧬</span>
+                <span class="stage-check">✓</span>
+            </div>
+            <div class="stage-label">형태 분석</div>
+            <div class="stage-tech">EfficientNet-B3</div>
+        </div>
+        <div class="stage-line"></div>
+
+        <div class="stage-item" data-stage="5">
+            <div class="stage-circle">
+                <span class="stage-icon">📋</span>
+                <span class="stage-check">✓</span>
+            </div>
+            <div class="stage-label">보고서 생성</div>
+            <div class="stage-tech">WHO 기준</div>
+        </div>
+    </div>
+
+    <!-- 안내 메시지 -->
+    <div class="analyzing-info">
+        <div class="info-item">
+            <span class="info-icon">⏱️</span>
+            <span class="info-text">
+                영상 길이에 따라 약 <strong>30초~3분</strong>이 소요됩니다.
+            </span>
+        </div>
+        <div class="info-item">
+            <span class="info-icon">💡</span>
+            <span class="info-text">
+                분석 중에는 페이지를 닫지 마세요.
+                완료되면 자동으로 결과 페이지로 이동합니다.
+            </span>
+        </div>
+    </div>
+
+    <!-- 오류 메시지 (숨김) -->
+    <div class="error-message" id="error-message" hidden>
+        <div class="error-icon">⚠️</div>
+        <div class="error-content">
+            <div class="error-title">분석 실패</div>
+            <div class="error-detail" id="error-detail">-</div>
+            <a href="/" class="btn-retry">처음으로 돌아가기</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const JOB_ID = "{{ job_id }}";
+</script>
+<script src="{{ url_for('static', filename='js/progress.js') }}"></script>
+{% endblock %}

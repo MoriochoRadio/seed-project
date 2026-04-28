@@ -142,7 +142,20 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install -r requirements.txt
 ```
 
-### 2. 분석 실행 (3줄)
+### 2-A. 웹 데모 실행 (추천)
+
+```bash
+python app.py
+```
+
+브라우저에서 `http://localhost:5000` 접속 → 영상 업로드 → 자동 분석
+
+> 🎨 **다크 네이비 + 청록 디자인의 인터랙티브 보고서**
+> - 일반인용 / 전문가용 토글 모드
+> - WHO 기준 친절한 해석
+> - AI 신뢰도 정보 / 종합 판정 근거 시각화
+
+### 2-B. Python 코드로 직접 분석 (3줄)
 
 ```python
 from src.pipeline import SpermAnalysisPipeline

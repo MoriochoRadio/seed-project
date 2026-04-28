@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}AI-CASA — 정자 영상 분석{% endblock %}
+
+{% block content %}
+<!-- ── Hero 섹션 ──────────────────────────────────────── -->
+<section class="hero">
+    <div class="hero-inner">
+        <span class="hero-badge">AI-Powered Sperm Analysis</span>
+        <h1 class="hero-title">
+            정자 현미경 영상을<br>
+            <span class="accent">AI가 자동으로 분석</span>합니다
+        </h1>
+        <p class="hero-subtitle">
+            YOLO11 + ByteTrack + EfficientNet-B3 기반의
+            통합 분석 파이프라인이<br>
+            운동성 · 키네마틱 · 형태를 한 번에 분석하고
+            WHO 기준에 따라 해석합니다.
+        </p>
+
+        <!-- 핵심 성과 카드 -->
+        <div class="hero-stats">
+            <div class="stat-card">
+                <div class="stat-value">6.9<span>%p</span></div>
+                <div class="stat-label">운동성 MAE</div>
+                <div class="stat-note">논문 최고 초과</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0.677</div>
+                <div class="stat-label">YOLO11 mAP50</div>
+                <div class="stat-note">정자 탐지 정확도</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0.725</div>
+                <div class="stat-label">형태 분류 AUC</div>
+                <div class="stat-note">EfficientNet-B3</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 업로드 섹션 ────────────────────────────────────── -->
+<section class="upload-section">
+    <div class="upload-card">
+        <h2 class="section-title">
+            <span class="step-num">1</span> 현미경 영상 업로드
+        </h2>
+        <p class="section-desc">
+            MP4, AVI, MOV 형식의 정자 현미경 영상을 업로드해주세요.
+        </p>
+
+        <!-- 드래그 앤 드롭 영역 -->
+        <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input"
+                   accept="video/mp4,video/avi,video/quicktime"
+                   hidden>
+            <div class="dropzone-icon">📹</div>
+            <div class="dropzone-text">
+                <strong>영상 파일을 여기에 드래그</strong>
+                <span>또는 클릭해서 파일 선택</span>
+            </div>
+            <div class="dropzone-hint">
+                지원 형식: MP4, AVI, MOV  |  최대 500MB
+            </div>
+        </div>
+
+        <!-- 선택된 파일 표시 (숨김 → JS로 표시) -->
+        <div class="file-info" id="file-info" hidden>
+            <div class="file-icon">🎬</div>
+            <div class="file-detail">
+                <div class="file-name" id="file-name">-</div>
+                <div class="file-size" id="file-size">-</div>
+            </div>
+            <button class="file-remove" id="file-remove">✕</button>
+        </div>
+
+        <!-- 분석 시작 버튼 -->
+        <button class="btn-analyze" id="btn-analyze" disabled>
+            🔬 분석 시작하기
+        </button>
+    </div>
+
+    <!-- 분석 단계 안내 -->
+    <div class="pipeline-preview">
+        <h3>분석 파이프라인</h3>
+        <div class="pipeline-steps">
+            <div class="pipeline-step">
+                <div class="step-icon">🎯</div>
+                <div class="step-name">정자 탐지</div>
+                <div class="step-tech">YOLO11</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+                <div class="step-icon">📍</div>
+                <div class="step-name">정자 추적</div>
+                <div class="step-tech">ByteTrack</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+                <div class="step-icon">📊</div>
+                <div class="step-name">운동성 분석</div>
+                <div class="step-tech">Ridge + RF</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+                <div class="step-icon">🧬</div>
+                <div class="step-name">형태 분석</div>
+                <div class="step-tech">EfficientNet-B3</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+                <div class="step-icon">📋</div>
+                <div class="step-name">보고서</div>
+                <div class="step-tech">WHO 기준</div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}

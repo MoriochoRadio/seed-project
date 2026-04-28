@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI-CASA{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- 상단 헤더 -->
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="logo">
+                <span class="logo-icon">🔬</span>
+                <span class="logo-text">
+                    <strong>AI-CASA</strong>
+                    <small>정자 영상 종합 분석 시스템</small>
+                </span>
+            </a>
+            <nav class="header-nav">
+                <a href="https://github.com/MoriochoRadio/sperm-ai"
+                   target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 페이지별 내용 -->
+    <main class="site-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- 하단 푸터 -->
+    <footer class="site-footer">
+        <p>
+            ⚠️ 이 시스템은 AI 보조 분석 도구이며 의학적 진단이 아닙니다.
+            정확한 진단은 반드시 전문 의료기관에서 받으시기 바랍니다.
+        </p>
+        <p class="footer-copyright">
+            © 2026 AI-CASA Project · 1인 개인 프로젝트
+        </p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
