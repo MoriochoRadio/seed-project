@@ -2231,3 +2231,396 @@ a {
         grid-template-columns: 1fr;
     }
 }
+
+/* ═══════════════════════════════════════════════════════
+   영상 품질 정보 박스
+═══════════════════════════════════════════════════════ */
+
+.video-quality-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-md);
+}
+
+/* ── 헤더 ─────────────────────────────────────────────── */
+.vq-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.vq-grade {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    font-size: 28px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.vq-grade-s {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.vq-grade-a {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: var(--bg-primary);
+    box-shadow: 0 4px 12px rgba(45, 212, 191, 0.3);
+}
+
+.vq-grade-b {
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.vq-grade-c {
+    background: linear-gradient(135deg, #F97316, #EA580C);
+    color: white;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.vq-title {
+    flex: 1;
+}
+
+.vq-title strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.vq-title small {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.vq-score {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    font-family: 'Consolas', monospace;
+    line-height: 1;
+}
+
+.vq-score span {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ── 사양 그리드 ───────────────────────────────────── */
+.vq-specs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.vq-spec-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+}
+
+.vq-spec-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.vq-spec-value {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Consolas', monospace;
+}
+
+/* ── 변경사항 / 이슈 ───────────────────────────────── */
+.vq-changes,
+.vq-issues {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    font-size: 13px;
+    border-left: 3px solid var(--accent);
+    margin-top: 12px;
+}
+
+.vq-issues {
+    border-left-color: var(--warning);
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.vq-changes strong,
+.vq-issues strong {
+    display: block;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.vq-changes ul,
+.vq-issues ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.vq-changes li,
+.vq-issues li {
+    color: var(--text-muted);
+    padding: 3px 0 3px 16px;
+    position: relative;
+}
+
+.vq-changes li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 800;
+}
+
+.vq-issues li::before {
+    content: '!';
+    position: absolute;
+    left: 0;
+    color: var(--warning);
+    font-weight: 800;
+}
+
+/* ── 반응형 ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .vq-specs {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   거부 페이지 (rejected.html)
+═══════════════════════════════════════════════════════ */
+
+.rejected-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+/* ── 메인 거부 카드 ────────────────────────────────────── */
+.rejected-card {
+    background: linear-gradient(
+        135deg, rgba(239, 68, 68, 0.1), var(--bg-card));
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 48px 32px;
+    text-align: center;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-lg);
+    border-top: 3px solid var(--danger);
+}
+
+.rejected-icon {
+    font-size: 72px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.4));
+}
+
+.rejected-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+}
+
+.rejected-subtitle {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 24px;
+}
+
+.rejected-video-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.rejected-video-info .info-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+/* ── 상세 카드 ────────────────────────────────────────── */
+.rejected-detail-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-md);
+}
+
+/* ── 품질 요약 ────────────────────────────────────────── */
+.quality-summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.qs-grade {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    font-size: 28px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.qs-grade-f {
+    background: linear-gradient(135deg, var(--danger), #DC2626);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.qs-info strong {
+    display: block;
+    font-size: 16px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.qs-info small {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* ── 사양 + 이슈 + 권고 섹션 ────────────────────────────── */
+.rejected-specs h3,
+.rejected-issues h3,
+.rejected-recommendations h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    margin-top: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rejected-specs h3:first-of-type {
+    margin-top: 0;
+}
+
+.issue-list,
+.rec-list {
+    list-style: none;
+    padding: 0;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+}
+
+.issue-list li,
+.rec-list li {
+    padding: 8px 0 8px 24px;
+    position: relative;
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.issue-list li::before {
+    content: '!';
+    position: absolute;
+    left: 4px;
+    color: var(--warning);
+    font-weight: 800;
+}
+
+.rec-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 800;
+}
+
+/* ── 권장 사양 ────────────────────────────────────────── */
+.recommended-specs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.rec-spec-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.rec-spec-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.rec-spec-item strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.rec-spec-item small {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* ── 반응형 ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .recommended-specs {
+        grid-template-columns: 1fr;
+    }
+    .rejected-title {
+        font-size: 24px;
+    }
+}

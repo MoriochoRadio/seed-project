@@ -74,14 +74,20 @@ def api_status(job_id: str):
     if not job:
         return jsonify({'error': '작업을 찾을 수 없습니다'}), 404
 
-    return jsonify({
+    response = {
         'job_id':    job['id'],
         'status':    job['status'],
         'progress':  job['progress'],
         'stage':     job['stage'],
         'stage_idx': job['stage_idx'],
         'error':     job['error'],
-    })
+    }
+
+    # 거부된 경우 품질 정보도 함께 전달
+    if job['status'] == 'rejected':
+        response['quality'] = job.get('quality')
+
+    return jsonify(response)
 
 
 # ── 분석 진행 페이지 ─────────────────────────────────────
@@ -113,3 +119,20 @@ def result(job_id: str):
                            job_id=job_id,
                            result=job['result'],
                            video_name=job['video_name'])
+
+
+# ── 거부 페이지 ──────────────────────────────────────────
+@bp.route('/rejected/<job_id>')
+def rejected(job_id: str):
+    """영상이 거부된 경우의 안내 페이지"""
+    job = get_job(job_id)
+    if not job:
+        return redirect(url_for('main.index'))
+
+    if job['status'] != 'rejected':
+        return redirect(url_for('main.index'))
+
+    return render_template('rejected.html',
+                           job_id=job_id,
+                           video_name=job['video_name'],
+                           quality=job.get('quality'))

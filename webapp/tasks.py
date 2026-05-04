@@ -38,11 +38,13 @@ def create_job(video_path: str, video_name: str) -> str:
         'id':         job_id,
         'video_path': video_path,
         'video_name': video_name,
-        'status':     'pending',     # pending / running / done / error
-        'progress':   0,             # 0 ~ 100
+        'status':     'pending',
+        'progress':   0,
         'stage':      '대기 중',
-        'stage_idx':  0,             # 0 ~ 5
+        'stage_idx':  0,
         'result':     None,
+        'quality':        None,    # 추가
+        'normalization':  None,    # 추가
         'error':      None,
         'created_at': time.time(),
     }
@@ -72,44 +74,150 @@ def run_analysis(job_id: str) -> None:
 
     try:
         job['status']    = 'running'
-        job['stage']     = '파이프라인 초기화 중'
+        job['stage']     = '영상 품질 평가 중'
         job['stage_idx'] = 0
         job['progress']  = 5
 
-        # 파이프라인 로드 (최초 1회)
+        # ── Step 0: 영상 품질 평가 ───────────────────────
+        from src.quality import VideoQualityAnalyzer
+        quality_analyzer = VideoQualityAnalyzer()
+        quality = quality_analyzer.analyze(job['video_path'])
+
+        job['quality'] = quality
+
+        # F등급은 분석 거부
+        if not quality['can_analyze']:
+            job['status']  = 'rejected'
+            job['stage']   = '품질 검증 실패'
+            job['error']   = '영상 품질이 분석 기준에 미달합니다.'
+            return
+
+       # ── Step 1: 영상 정규화 (스마트 분기) ──────────
+        analysis_video_path = job['video_path']
+
+        from src.normalizer import VideoNormalizer
+
+        # 어떤 정규화가 필요한지 판단
+        norm_type = VideoNormalizer.get_normalization_type(
+            quality['metadata'])
+
+        if norm_type != 'none':
+            # 정규화 진행
+            normalizer = VideoNormalizer()
+
+            import os
+            base, _ = os.path.splitext(job['video_path'])
+            normalized_path = f"{base}_normalized.mp4"
+
+            # 진행률 콜백 정의
+            def on_progress(current, total, pct):
+                job['progress'] = 8 + int(pct * 0.04)
+                job['stage'] = (
+                    f'영상 정규화 중 ({pct}% — '
+                    f'{current}/{total} 프레임)')
+
+            # 분기: 빠른 컷팅 vs 풀 정규화
+            if norm_type == 'trim':
+                # 길이만 다름 → 빠른 컷팅 (1~5초)
+                job['stage'] = '영상 길이 조정 중 (빠른 변환)'
+                job['progress'] = 8
+                norm_result = normalizer.fast_trim(
+                    job['video_path'],
+                    normalized_path,
+                    progress_callback=on_progress)
+            else:
+                # full: 해상도/FPS 변환 → 전체 정규화
+                job['stage'] = '영상 정규화 중'
+                job['progress'] = 8
+                norm_result = normalizer.normalize(
+                    job['video_path'],
+                    normalized_path,
+                    progress_callback=on_progress)
+
+            if norm_result['success']:
+                analysis_video_path = normalized_path
+                job['normalization'] = norm_result
+                job['progress'] = 12
+            else:
+                job['status'] = 'error'
+                job['error'] = (
+                    f"정규화 실패: {norm_result['error']}")
+                return
+        else:
+            # 정규화 불필요 → 즉시 진행
+            job['normalization'] = None
+            job['progress'] = 12
+
+        # ── Step 2~6: 기존 분석 파이프라인 ──────────────
         pipeline = get_pipeline()
 
-        # 단계별 진행 상태 업데이트
-        # (실제 분석 함수가 verbose=True로 print하지만
-        #  진행률은 추정값으로 표시)
         stages = [
-            (10, '정자 탐지 중',    'YOLO11'),
-            (30, '정자 추적 중',    'ByteTrack'),
-            (50, '운동성 분석 중',  'Ridge + RF'),
+            (15, '정자 탐지 중',    'YOLO11'),
+            (35, '정자 추적 중',    'ByteTrack'),
+            (55, '운동성 분석 중',  'Ridge + RF'),
             (75, '형태 분석 중',    'EfficientNet-B3'),
             (90, '보고서 생성 중',  'WHO 기준 해석'),
         ]
 
-        # 진행률 업데이트 스레드 (단순 시간 기반)
+        # 진행률 업데이트 스레드
         def update_progress():
             for prog, stage_name, _ in stages:
                 if job['status'] != 'running':
                     return
                 job['progress']  = prog
                 job['stage']     = stage_name
-                job['stage_idx'] = stages.index((prog, stage_name, _)) + 1
+                job['stage_idx'] = stages.index(
+                    (prog, stage_name, _)) + 1
                 time.sleep(2)
 
         progress_thread = threading.Thread(
             target=update_progress, daemon=True)
         progress_thread.start()
 
-        # 실제 분석 실행
-        result = pipeline.analyze(job['video_path'], verbose=True)
+        # 실제 분석 실행 (정규화된 영상으로!)
+        result = pipeline.analyze(
+            analysis_video_path, verbose=True)
 
         if result is None:
             raise RuntimeError(
                 "분석 실패: 파이프라인이 결과를 반환하지 못했습니다.")
+
+        # 품질 정보를 결과에 추가
+        result['quality']       = quality
+        result['normalization'] = job.get('normalization')
+
+        # ── 품질 박스 표시 여부 판단 ──────────────────────
+        # 다음 경우에만 사용자에게 품질 박스를 표시:
+        # 1. 등급이 B 이하 (실질적으로 분석에 영향)
+        # 2. 풀 정규화가 적용됨 (해상도/FPS 변환 = 큰 변환)
+        # 3. 분석에 영향 줄 수 있는 심각한 이슈가 있음
+        norm = job.get('normalization')
+
+        # 풀 정규화 = 해상도 또는 FPS 변환이 있었던 경우
+        is_full_norm = False
+        if norm and norm.get('changes'):
+            for change in norm['changes']:
+                if '해상도' in change or '프레임률' in change:
+                    is_full_norm = True
+                    break
+
+        # 심각한 이슈만 카운트 (선명도, 흔들림 등은 본질 문제 아니면 제외)
+        critical_issues = [
+            issue for issue in quality.get('issues', [])
+            if any(keyword in issue for keyword in [
+                '해상도가 낮음',
+                '프레임률이 낮음',
+                '너무 짧음',
+                '영상이 불안정',
+                '조명/밝기',
+            ])
+        ]
+
+        result['show_quality_card'] = (
+            quality['grade'] in ('B', 'C') or
+            is_full_norm or
+            len(critical_issues) > 0
+        )
 
         # 완료
         job['status']    = 'done'
@@ -124,9 +232,4 @@ def run_analysis(job_id: str) -> None:
         traceback.print_exc()
 
     finally:
-        # 업로드 영상 정리 (옵션)
-        # try:
-        #     os.remove(job['video_path'])
-        # except Exception:
-        #     pass
         pass

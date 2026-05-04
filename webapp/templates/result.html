@@ -42,6 +42,93 @@
             💡 일반인용 모드입니다. 각 수치의 의미를 자세히 설명합니다.
         </div>
     </div>
+
+    <!-- ── 영상 품질 정보 박스 ──────────────────────── -->
+    {% if result.quality and result.show_quality_card %}
+    {% set q = result.quality %}
+    {% set norm = result.normalization %}
+    <div class="video-quality-card">
+        <div class="vq-header">
+            <div class="vq-grade vq-grade-{{ q.grade|lower }}">
+                {{ q.grade }}
+            </div>
+            <div class="vq-title">
+                <strong>입력 영상 품질</strong>
+                <small>
+                    {% if q.grade == 'S' %}
+                    표준급 영상 (변환 없이 분석)
+                    {% elif q.grade == 'A' %}
+                    우수한 영상 (소폭 변환 후 분석)
+                    {% elif q.grade == 'B' %}
+                    분석 가능한 영상 (변환 후 분석)
+                    {% else %}
+                    분석 시도된 영상 (신뢰도 주의)
+                    {% endif %}
+                </small>
+            </div>
+            <div class="vq-score">
+                {{ q.total_score }}<span>/100</span>
+            </div>
+        </div>
+
+        <!-- 원본 사양 -->
+        <div class="vq-specs">
+            <div class="vq-spec-item">
+                <span class="vq-spec-label">해상도</span>
+                <span class="vq-spec-value">
+                    {{ q.metadata.width }} × {{ q.metadata.height }}
+                </span>
+            </div>
+            <div class="vq-spec-item">
+                <span class="vq-spec-label">프레임률</span>
+                <span class="vq-spec-value">
+                    {{ q.metadata.fps }} fps
+                </span>
+            </div>
+            <div class="vq-spec-item">
+                <span class="vq-spec-label">길이</span>
+                <span class="vq-spec-value">
+                    {{ q.metadata.duration }} 초
+                </span>
+            </div>
+            <div class="vq-spec-item">
+                <span class="vq-spec-label">상태</span>
+                <span class="vq-spec-value">
+                    {% if norm %}
+                        🔄 정규화 적용됨
+                    {% else %}
+                        ✅ 표준 사양
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- 정규화 적용된 경우 변경사항 표시 -->
+        {% if norm and norm.changes %}
+        <div class="vq-changes">
+            <strong>적용된 변환:</strong>
+            <ul>
+                {% for change in norm.changes %}
+                <li>{{ change }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- 이슈 표시 (일반인 모드에서만) -->
+        {% if q.issues %}
+        <div class="vq-issues for-simple">
+            <strong>⚠️ 영상 분석 시 주의사항:</strong>
+            <ul>
+                {% for issue in q.issues %}
+                <li>{{ issue }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <!-- ── AI 검증 정보 박스 (일반인용에서만 표시) ───── -->
     <div class="for-simple ai-trust-box">
         <div class="ai-trust-header">

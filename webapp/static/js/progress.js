@@ -44,10 +44,11 @@ async function pollStatus() {
             return;
         }
 
-        // 분석 오류 (status가 명시적으로 error일 때만)
-        if (data.status === 'error') {
-            showError(data.error || '분석 중 오류가 발생했습니다');
+        // 영상 거부 (품질 미달)
+        if (data.status === 'rejected') {
             stopPolling();
+            // 거부 페이지로 이동
+            window.location.href = `/rejected/${JOB_ID}`;
             return;
         }
 

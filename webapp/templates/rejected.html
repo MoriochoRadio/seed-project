@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}분석 불가 — AI-CASA{% endblock %}
+
+{% block content %}
+<section class="rejected-section">
+    <!-- ── 거부 안내 ────────────────────────────────── -->
+    <div class="rejected-card">
+        <div class="rejected-icon">⚠️</div>
+        <h1 class="rejected-title">영상 분석이 어렵습니다</h1>
+        <p class="rejected-subtitle">
+            업로드하신 영상의 품질이 분석 기준에 미치지 못해
+            <br>정확한 결과를 보장할 수 없습니다.
+        </p>
+
+        <!-- 영상 정보 -->
+        <div class="rejected-video-info">
+            <span class="info-label">파일명</span>
+            <span class="info-value file-tag">{{ video_name }}</span>
+        </div>
+    </div>
+
+    {% if quality %}
+    {% set q = quality %}
+    <!-- ── 발견된 문제점 ────────────────────────────── -->
+    <div class="rejected-detail-card">
+        <div class="card-header">
+            <h2>🔍 발견된 문제점</h2>
+        </div>
+
+        <div class="quality-summary">
+            <div class="qs-grade qs-grade-f">F</div>
+            <div class="qs-info">
+                <strong>품질 점수: {{ q.total_score }}점 / 100점</strong>
+                <small>등급: F (분석 거부)</small>
+            </div>
+        </div>
+
+        {% if q.metadata %}
+        <div class="rejected-specs">
+            <h3>📋 영상 사양</h3>
+            <div class="vq-specs">
+                <div class="vq-spec-item">
+                    <span class="vq-spec-label">해상도</span>
+                    <span class="vq-spec-value">
+                        {{ q.metadata.width }} × {{ q.metadata.height }}
+                    </span>
+                </div>
+                <div class="vq-spec-item">
+                    <span class="vq-spec-label">프레임률</span>
+                    <span class="vq-spec-value">
+                        {{ q.metadata.fps }} fps
+                    </span>
+                </div>
+                <div class="vq-spec-item">
+                    <span class="vq-spec-label">길이</span>
+                    <span class="vq-spec-value">
+                        {{ q.metadata.duration }} 초
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if q.issues %}
+        <div class="rejected-issues">
+            <h3>⚠️ 문제점</h3>
+            <ul class="issue-list">
+                {% for issue in q.issues %}
+                <li>{{ issue }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if q.recommendations %}
+        <div class="rejected-recommendations">
+            <h3>💡 개선 방법</h3>
+            <ul class="rec-list">
+                {% for rec in q.recommendations %}
+                <li>{{ rec }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ── 권장 영상 사양 ─────────────────────────────── -->
+    <div class="rejected-detail-card">
+        <div class="card-header">
+            <h2>📷 권장 촬영 사양</h2>
+        </div>
+
+        <div class="recommended-specs">
+            <div class="rec-spec-item">
+                <span class="rec-spec-icon">📐</span>
+                <div>
+                    <strong>해상도</strong>
+                    <small>최소 640 × 480 (HD 1280×720 권장)</small>
+                </div>
+            </div>
+            <div class="rec-spec-item">
+                <span class="rec-spec-icon">🎬</span>
+                <div>
+                    <strong>프레임률</strong>
+                    <small>30~60 fps</small>
+                </div>
+            </div>
+            <div class="rec-spec-item">
+                <span class="rec-spec-icon">⏱️</span>
+                <div>
+                    <strong>영상 길이</strong>
+                    <small>30초 ~ 3분</small>
+                </div>
+            </div>
+            <div class="rec-spec-item">
+                <span class="rec-spec-icon">🔬</span>
+                <div>
+                    <strong>촬영 환경</strong>
+                    <small>위상차 현미경 또는 자가키트, 비염색 정자</small>
+                </div>
+            </div>
+            <div class="rec-spec-item">
+                <span class="rec-spec-icon">📌</span>
+                <div>
+                    <strong>안정성</strong>
+                    <small>삼각대 등으로 카메라 고정, 흔들림 최소화</small>
+                </div>
+            </div>
+            <div class="rec-spec-item">
+                <span class="rec-spec-icon">💡</span>
+                <div>
+                    <strong>조명</strong>
+                    <small>밝고 균일한 조명, 정자에 정확히 초점</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 액션 버튼 ──────────────────────────────────── -->
+    <div class="action-buttons">
+        <a href="/" class="btn-action btn-primary">
+            🔄 다른 영상 업로드하기
+        </a>
+    </div>
+</section>
+{% endblock %}
