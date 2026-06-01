@@ -24,7 +24,7 @@ def get_pipeline():
     """파이프라인 싱글톤 (첫 요청 시 로드)"""
     global _pipeline
     if _pipeline is None:
-        sys.path.insert(0, r'C:\Users\neo62\sperm-ai')
+        #sys.path.insert(0, r'C:\Users\neo62\sperm-ai')
         from src.pipeline import SpermAnalysisPipeline
         _pipeline = SpermAnalysisPipeline()
     return _pipeline

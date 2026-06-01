@@ -16,7 +16,7 @@ bp = Blueprint('main', __name__)
 
 
 # ── 업로드 폴더 ──────────────────────────────────────────
-UPLOAD_FOLDER = r'C:\Users\neo62\sperm-ai\tmp_uploads'
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'tmp_uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_EXT = {'.mp4', '.avi', '.mov'}
