@@ -15,10 +15,10 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 
 # ── 다운로드 대상 (경로: Google Drive file ID) ──────────────
 MODELS = {
-    os.path.join(YOLO_DIR,  'best.pt'):                          'remove',
-    os.path.join(MODEL_DIR, 'motility_ensemble.pkl'):            'remove',
-    os.path.join(MODEL_DIR, 'motility_ensemble_v2.pkl'):         'remove',
-    os.path.join(MODEL_DIR, 'morphology_efficientnet_b3_v3.pt'): 'remove',
+    os.path.join(YOLO_DIR,  'best.pt'):                          os.environ.get('GDRIVE_YOLO_ID'),
+    os.path.join(MODEL_DIR, 'motility_ensemble.pkl'):            os.environ.get('GDRIVE_MOTILITY_ID'),
+    os.path.join(MODEL_DIR, 'motility_ensemble_v2.pkl'):         os.environ.get('GDRIVE_MOTILITY_V2_ID'),
+    os.path.join(MODEL_DIR, 'morphology_efficientnet_b3_v3.pt'): os.environ.get('GDRIVE_MORPHOLOGY_ID'),
 }
 
 # ── 다운로드 실행 ────────────────────────────────────────────
