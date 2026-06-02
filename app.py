@@ -76,11 +76,13 @@ app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024
 app.register_blueprint(bp)
 
 
+# app.py 마지막 블록 수정
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8080))  # 환경변수 PORT 없으면 8080
     print("=" * 60)
     print("  🔬 AI-CASA 웹 서버 시작")
     print("=" * 60)
-    print("  접속 주소: http://localhost:5000")
+    print(f"  접속 주소: http://localhost:{port}")  # ← 실제 포트 반영
     print("  종료: Ctrl+C")
     print("=" * 60)
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)
