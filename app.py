@@ -82,7 +82,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print("  🔬 AI-CASA 웹 서버 시작")
     print("=" * 60)
-    print(f"  접속 주소: http://localhost:{port}")  # ← 실제 포트 반영
+    print(f"  접속 주소: http://localhost:{port}") 
     print("  종료: Ctrl+C")
     print("=" * 60)
     app.run(host='0.0.0.0', port=port, debug=True)
