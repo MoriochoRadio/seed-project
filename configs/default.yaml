@@ -1,0 +1,60 @@
+# Default config for Trajectory-aware Sperm Motility Analysis
+data:
+  root: ./data/visem_tracking
+  fps: 30
+  window_seconds: 1.0           # default trajectory window
+  min_track_length: 15          # frames
+  num_classes: 3                # progressive / non-progressive / immotile
+  use_synthetic_hyperactivation: true   # VISEM has no hyperactivation label
+  # How class labels are derived. "trajectory_kinematic" classifies each track
+  # individually from its VCL/LIN; "video_majority" copies the WHO majority class
+  # from the parent video to all of its tracks (legacy, collapses many classes).
+  label_mode: trajectory_kinematic      # trajectory_kinematic | video_majority
+
+augmentation:
+  rotation_deg: 15
+  jitter_std: 0.5               # pixels
+  occlusion_prob: 0.1           # randomly drop frames
+  crossing_prob: 0.05
+
+tracking:
+  max_age: 5                    # frames
+  min_hits: 3
+  iou_threshold: 0.2
+  max_distance: 25.0            # pixels
+
+model:
+  arch: hybrid                  # [inception, hybrid]
+  in_channels: 4                # x, y, vx, vy (+ confidence appended outside)
+  use_tracking_confidence: true
+  cnn_filters: 32
+  cnn_kernels: [9, 19, 39]
+  transformer_dim: 64
+  transformer_heads: 4
+  transformer_layers: 2
+  dropout: 0.1
+
+train:
+  batch_size: 64
+  epochs: 30
+  lr: 0.001
+  weight_decay: 1.0e-4        # NB: must be 1.0e-4 (PyYAML 1.1 reads 1e-4 as string)
+  scheduler: cosine
+  loss_weights:
+    motility: 1.0
+    hyperactivation: 0.5
+    kinematic: 0.1
+  device: auto                  # cpu / cuda / auto
+  num_workers: 2
+  seed: 42
+  # ---- Early stopping & best-checkpoint policy ---- #
+  early_stopping:
+    patience: 10                # epochs without improvement before stopping
+    min_delta: 1.0e-4           # min improvement counted as 'better'
+    monitor: f1_macro           # f1_macro / accuracy / auroc / cohen_kappa / loss / ece
+    mode: max                   # 'max' for f1/acc/auroc/kappa, 'min' for loss/ece
+  best_ckpt_name: best.pt       # always save BEST model (not final-epoch)
+
+eval:
+  metrics: [accuracy, f1_macro, auroc, cohen_kappa]
+  save_dir: ./runs

@@ -1,0 +1,162 @@
+{
+  "results": {
+    "baseline": {
+      "1.0s_30fps": {
+        "accuracy": 0.42948717948717946,
+        "f1_macro": 0.3999765735209489,
+        "auroc": 0.5333985561665141,
+        "cohen_kappa": 0.13570717131474108,
+        "ece": 0.4570989173192245,
+        "accuracy_drop_ratio": 0.0
+      },
+      "0.5s_30fps": {
+        "accuracy": 0.4230769230769231,
+        "f1_macro": 0.3824929580743534,
+        "auroc": 0.5193585525677328,
+        "cohen_kappa": 0.11974921630094049,
+        "ece": 0.47185899240848345,
+        "accuracy_drop_ratio": 0.014925373134328306
+      },
+      "0.25s_30fps": {
+        "accuracy": 0.391025641025641,
+        "f1_macro": 0.35428780634879614,
+        "auroc": 0.5089290991104488,
+        "cohen_kappa": 0.06915394761635574,
+        "ece": 0.5029083738724391,
+        "accuracy_drop_ratio": 0.08955223880597009
+      },
+      "1.0s_15fps": {
+        "accuracy": 0.4166666666666667,
+        "f1_macro": 0.3762913939922134,
+        "auroc": 0.5178148365485726,
+        "cohen_kappa": 0.10907493410317559,
+        "ece": 0.4955507461459209,
+        "accuracy_drop_ratio": 0.029850746268656612
+      },
+      "1.0s_10fps": {
+        "accuracy": 0.3974358974358974,
+        "f1_macro": 0.35879042940434097,
+        "auroc": 0.5111105967106879,
+        "cohen_kappa": 0.07831552482715265,
+        "ece": 0.5062897430780606,
+        "accuracy_drop_ratio": 0.07462686567164178
+      }
+    },
+    "proposed": {
+      "1.0s_30fps": {
+        "accuracy": 0.5961538461538461,
+        "f1_macro": 0.598463392029657,
+        "auroc": 0.71732126066112,
+        "cohen_kappa": 0.4035683942225998,
+        "ece": 0.22623321968011367,
+        "accuracy_drop_ratio": 0.0
+      },
+      "0.5s_30fps": {
+        "accuracy": 0.5833333333333334,
+        "f1_macro": 0.5858770858770859,
+        "auroc": 0.7219759011956378,
+        "cohen_kappa": 0.3856407149348682,
+        "ece": 0.2291627723055008,
+        "accuracy_drop_ratio": 0.021505376344085947
+      },
+      "0.25s_30fps": {
+        "accuracy": 0.5961538461538461,
+        "f1_macro": 0.5989138527569745,
+        "auroc": 0.6990855782531852,
+        "cohen_kappa": 0.4034235765448586,
+        "ece": 0.20896792239867723,
+        "accuracy_drop_ratio": 0.0
+      },
+      "1.0s_15fps": {
+        "accuracy": 0.6153846153846154,
+        "f1_macro": 0.6169910048414722,
+        "auroc": 0.7113403624999273,
+        "cohen_kappa": 0.43221110100091,
+        "ece": 0.23574256075498384,
+        "accuracy_drop_ratio": -0.03225806451612911
+      },
+      "1.0s_10fps": {
+        "accuracy": 0.6025641025641025,
+        "f1_macro": 0.6099973269179363,
+        "auroc": 0.6988379302419254,
+        "cohen_kappa": 0.410459587955626,
+        "ece": 0.22296525003054202,
+        "accuracy_drop_ratio": -0.010752688172042973
+      }
+    }
+  },
+  "config": {
+    "data": {
+      "root": "./data/visem_tracking",
+      "fps": 30,
+      "window_seconds": 1.0,
+      "min_track_length": 15,
+      "num_classes": 3,
+      "use_synthetic_hyperactivation": true,
+      "label_mode": "trajectory_kinematic"
+    },
+    "augmentation": {
+      "rotation_deg": 15,
+      "jitter_std": 0.5,
+      "occlusion_prob": 0.1,
+      "crossing_prob": 0.05
+    },
+    "tracking": {
+      "max_age": 5,
+      "min_hits": 3,
+      "iou_threshold": 0.2,
+      "max_distance": 25.0
+    },
+    "model": {
+      "arch": "hybrid",
+      "in_channels": 4,
+      "use_tracking_confidence": true,
+      "cnn_filters": 32,
+      "cnn_kernels": [
+        9,
+        19,
+        39
+      ],
+      "transformer_dim": 64,
+      "transformer_heads": 4,
+      "transformer_layers": 2,
+      "dropout": 0.1
+    },
+    "train": {
+      "batch_size": 64,
+      "epochs": 30,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "scheduler": "cosine",
+      "loss_weights": {
+        "motility": 1.0,
+        "hyperactivation": 0.5,
+        "kinematic": 0.1
+      },
+      "device": "auto",
+      "num_workers": 2,
+      "seed": 42,
+      "early_stopping": {
+        "patience": 10,
+        "min_delta": 0.0001,
+        "monitor": "f1_macro",
+        "mode": "max"
+      },
+      "best_ckpt_name": "best.pt"
+    },
+    "eval": {
+      "metrics": [
+        "accuracy",
+        "f1_macro",
+        "auroc",
+        "cohen_kappa"
+      ],
+      "save_dir": "./runs"
+    }
+  },
+  "test_videos": [
+    "24",
+    "38",
+    "47"
+  ]
+}
