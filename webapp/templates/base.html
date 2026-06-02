@@ -4,42 +4,371 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AI-CASA{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* ── SEED Design System — CSS Custom Properties ───────────────── */
+        :root {
+            /* Brand & Accent */
+            --color-primary:        #145da0;
+            --color-blue-hover:     #1a70c2;
+            --color-blue-dark:      #0e4478;
+            --color-blue-pressed:   #0a2f54;
+            --color-blue-tint:      #e8f0f8;
+            --color-on-primary:     #ffffff;
+
+            /* Surface */
+            --color-canvas:         #ffffff;
+            --color-surface-1:      #f4f4f4;
+            --color-surface-2:      #e0e0e0;
+            --color-hairline:       #c6c6c6;
+            --color-hairline-strong:#161616;
+
+            /* Inverse (footer) */
+            --color-inverse-canvas: #161616;
+            --color-inverse-surface-1: #262626;
+            --color-inverse-ink:    #ffffff;
+            --color-inverse-ink-muted: #c6c6c6;
+
+            /* Text */
+            --color-ink:            #161616;
+            --color-ink-muted:      #525252;
+            --color-ink-subtle:     #8c8c8c;
+
+            /* Semantic */
+            --color-success:        #24a148;
+            --color-warning:        #f1c21b;
+            --color-error:          #da1e28;
+
+            /* Typography */
+            --font-family:          'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+
+            /* Spacing (4px base grid) */
+            --space-xxs:  4px;
+            --space-xs:   8px;
+            --space-sm:   12px;
+            --space-md:   16px;
+            --space-lg:   24px;
+            --space-xl:   32px;
+            --space-xxl:  48px;
+            --space-section: 96px;
+
+            /* Shape — all 0px on marketing surfaces */
+            --radius-none: 0px;
+        }
+
+        /* ── Reset & Base ─────────────────────────────────────────────── */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: var(--font-family);
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.50;
+            letter-spacing: 0.16px;
+            color: var(--color-ink);
+            background-color: var(--color-canvas);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        a {
+            color: var(--color-primary);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+        a:hover { color: var(--color-blue-dark); }
+
+        /* ── Utility Bar ──────────────────────────────────────────────── */
+        .utility-bar {
+            background-color: var(--color-surface-1);
+            border-bottom: 1px solid var(--color-hairline);
+            height: 32px;
+            display: flex;
+            align-items: center;
+        }
+        .utility-bar-inner {
+            max-width: 1584px;
+            margin: 0 auto;
+            padding: 0 var(--space-xl);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: var(--space-lg);
+        }
+        .utility-bar a {
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: 0.32px;
+            color: var(--color-ink-muted);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xxs);
+        }
+        .utility-bar a:hover { color: var(--color-primary); }
+
+        /* ── Top Navigation ───────────────────────────────────────────── */
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: var(--color-canvas);
+            border-bottom: 1px solid var(--color-hairline);
+            height: 48px;
+        }
+        .header-inner {
+            max-width: 1584px;
+            margin: 0 auto;
+            padding: 0 var(--space-xl);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-xl);
+        }
+
+        /* Logo — SEED logotype image */
+        .logo {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            min-width: 80px;
+            text-decoration: none;
+        }
+        .logo img {
+            height: 28px;
+            width: auto;
+            display: block;
+        }
+
+        /* Nav links */
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xxs);
+        }
+        .header-nav a {
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0.16px;
+            color: var(--color-ink);
+            padding: 0 var(--space-md);
+            height: 48px;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.15s, color 0.15s;
+            text-decoration: none;
+        }
+        .header-nav a:hover {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+        .header-nav a.active {
+            color: var(--color-ink);
+            font-weight: 600;
+            border-bottom-color: var(--color-primary);
+        }
+
+        /* ── Page Content ─────────────────────────────────────────────── */
+        .site-main {
+            flex: 1;
+            background-color: var(--color-canvas);
+        }
+
+        /* ── Footer ───────────────────────────────────────────────────── */
+        .site-footer {
+            background-color: var(--color-inverse-canvas);
+            color: var(--color-inverse-ink-muted);
+            padding: var(--space-xxl) var(--space-xl);
+        }
+        .footer-inner {
+            max-width: 1584px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+        .site-footer p {
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 1.29;
+            letter-spacing: 0.16px;
+            color: var(--color-inverse-ink-muted);
+        }
+        .site-footer .footer-disclaimer {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-xs);
+            padding: var(--space-md) var(--space-md);
+            border-left: 2px solid var(--color-primary);
+            background-color: var(--color-inverse-surface-1);
+        }
+        .site-footer .footer-disclaimer p {
+            font-size: 12px;
+            letter-spacing: 0.32px;
+            color: var(--color-inverse-ink-muted);
+        }
+        .footer-divider {
+            border: none;
+            border-top: 1px solid var(--color-inverse-surface-1);
+            margin: var(--space-xs) 0;
+        }
+        .footer-copyright {
+            font-size: 12px !important;
+            letter-spacing: 0.32px;
+            color: var(--color-ink-subtle) !important;
+        }
+
+        /* ── Responsive ───────────────────────────────────────────────── */
+        @media (max-width: 672px) {
+            .utility-bar { display: none; }
+
+            .header-inner { padding: 0 var(--space-md); }
+
+            .header-nav {
+                position: fixed;
+                inset: 0;
+                top: 48px;
+                background-color: var(--color-canvas);
+                border-top: 1px solid var(--color-hairline);
+                flex-direction: column;
+                align-items: flex-start;
+                padding: var(--space-md);
+                gap: 0;
+                display: none;
+                z-index: 99;
+            }
+            .header-nav.open { display: flex; }
+            .header-nav a {
+                width: 100%;
+                padding: 0 var(--space-md);
+                border-bottom: 1px solid var(--color-hairline);
+                height: 48px;
+            }
+            .header-nav a:last-child { border-bottom: none; }
+
+            .hamburger {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 5px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: var(--space-xs);
+                width: 40px;
+                height: 40px;
+                margin-left: auto;
+            }
+            .hamburger span {
+                display: block;
+                height: 1.5px;
+                background-color: var(--color-ink);
+                width: 22px;
+                transition: transform 0.2s;
+            }
+
+            .site-footer { padding: var(--space-xl) var(--space-md); }
+        }
+
+        @media (min-width: 673px) {
+            .hamburger { display: none; }
+        }
+    </style>
 </head>
 <body>
-    <!-- 상단 헤더 -->
+
+    <!-- Utility Bar -->
+    <div class="utility-bar">
+        <div class="utility-bar-inner">
+            <a href="https://github.com/MoriochoRadio/sperm-ai" target="_blank" rel="noopener">
+                GitHub
+            </a>
+        </div>
+    </div>
+
+    <!-- Top Navigation -->
     <header class="site-header">
         <div class="header-inner">
-            <a href="/" class="logo">
-                <span class="logo-icon">🔬</span>
-                <span class="logo-text">
-                    <strong>AI-CASA</strong>
-                    <small>정자 영상 종합 분석 시스템</small>
-                </span>
+
+            <!-- SEED Logotype -->
+            <a href="/" class="logo" aria-label="AI-CASA 홈으로 이동">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="SEED" />
             </a>
-            <nav class="header-nav">
-                <a href="https://github.com/MoriochoRadio/sperm-ai"
-                   target="_blank">GitHub</a>
+
+            <!-- Navigation Links -->
+            <nav class="header-nav" id="main-nav" aria-label="주요 메뉴">
+                <a href="/">분석</a>
+                <a href="/results">결과</a>
+                <a href="https://github.com/MoriochoRadio/sperm-ai" target="_blank" rel="noopener">GitHub</a>
             </nav>
+
+            <!-- Hamburger (mobile) -->
+            <button
+                class="hamburger"
+                aria-label="메뉴 열기"
+                aria-expanded="false"
+                aria-controls="main-nav"
+                onclick="toggleNav(this)"
+            >
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
         </div>
     </header>
 
-    <!-- 페이지별 내용 -->
+    <!-- Page Content -->
     <main class="site-main">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- 하단 푸터 -->
-    <footer class="site-footer">
-        <p>
-            ⚠️ 이 시스템은 AI 보조 분석 도구이며 의학적 진단이 아닙니다.
-            정확한 진단은 반드시 전문 의료기관에서 받으시기 바랍니다.
-        </p>
-        <p class="footer-copyright">
-            © 2026 AI-CASA Project · 1인 개인 프로젝트
-        </p>
+    <!-- Footer -->
+    <footer class="site-footer" role="contentinfo">
+        <div class="footer-inner">
+
+            <div class="footer-disclaimer" role="note">
+                <p>
+                    ⚠ 이 시스템은 AI 보조 분석 도구이며 의학적 진단이 아닙니다.
+                    정확한 진단은 반드시 전문 의료기관에서 받으시기 바랍니다.
+                </p>
+            </div>
+
+            <hr class="footer-divider">
+
+            <p class="footer-copyright">
+                © 2026 AI-CASA Project · 1인 개인 프로젝트
+            </p>
+
+        </div>
     </footer>
 
+    <!-- Mobile Nav Toggle -->
+    <script>
+        function toggleNav(btn) {
+            var nav = document.getElementById('main-nav');
+            var isOpen = nav.classList.toggle('open');
+            btn.setAttribute('aria-expanded', isOpen);
+        }
+    </script>
+
     {% block scripts %}{% endblock %}
+
 </body>
 </html>
