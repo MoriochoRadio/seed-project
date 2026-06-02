@@ -7,6 +7,8 @@ import os
 import gdown
 from flask import Flask
 from webapp.routes import bp
+from dotenv import load_dotenv
+load_dotenv()  # .env 파일 자동 로드
 
 
 # ── Render.com 배포 시 모델 자동 다운로드 ───────────────────
@@ -81,4 +83,4 @@ if __name__ == '__main__':
     print("  접속 주소: http://localhost:5000")
     print("  종료: Ctrl+C")
     print("=" * 60)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
