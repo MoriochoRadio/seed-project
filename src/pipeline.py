@@ -28,7 +28,7 @@ class SpermAnalysisPipeline:
                  tracker_config: str = None,
                  morph_path   : str = None):
 
-        base = r'C:\Users\neo62\sperm-ai'
+        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         yolo_path      = yolo_path or os.path.join(
             base, 'models', 'yolo11_sperm_v2',

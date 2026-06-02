@@ -24,7 +24,7 @@ class MotilityAnalyzer:
                         없으면 자동으로 v2 → v1 순서로 탐색
         """
         import os
-        base = r'C:\Users\neo62\sperm-ai\models'
+        base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'models')
 
         # v2 → v1 순서로 자동 탐색
         if model_path is None:
