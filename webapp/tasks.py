@@ -11,6 +11,7 @@ import time
 import threading
 import traceback
 
+from src.pipeline import SpermAnalysisPipeline
 
 # ── 작업 큐 (메모리 기반) ─────────────────────────────────
 # 실제 운영에선 Redis 등을 쓰지만 데모는 메모리로 충분
@@ -181,6 +182,22 @@ def run_analysis(job_id: str) -> None:
         if result is None:
             raise RuntimeError(
                 "분석 실패: 파이프라인이 결과를 반환하지 못했습니다.")
+
+        # annotated 영상 생성 (track_history 재활용)
+        try:
+            base, _ = os.path.splitext(analysis_video_path)
+            ann_path = f"{base}_annotated.mp4"
+            track_history = result.get('track_history', {})
+            if track_history:
+                pipeline.render_annotated_video(
+                    analysis_video_path,
+                    track_history,
+                    ann_path)
+                result['annotated_video'] = ann_path
+        except Exception as ann_err:
+            # annotated 영상 생성 실패해도 분석 결과는 유지
+            print(f"[annotated] 영상 생성 실패 (무시): {ann_err}")
+            result['annotated_video'] = None
 
         # 품질 정보를 결과에 추가
         result['quality']       = quality

@@ -165,6 +165,9 @@ class SpermAnalysisPipeline:
 
         return {
             'video':              name,
+            'video_path':         video_path,
+            'annotated_video':    None,
+            'track_history':      track_history,
             'N':                  N,
             **motility,
             **interp,
@@ -174,6 +177,54 @@ class SpermAnalysisPipeline:
             'morphology_interp':  morphology_interp,
             **overall,
         }
+
+    def render_annotated_video(self, video_path: str,
+                            track_history: dict,
+                            output_path: str) -> str:
+        """추적 결과(bounding box + ID)를 영상에 그려서 저장"""
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        W   = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        H   = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        writer = cv2.VideoWriter(
+            output_path,
+            cv2.VideoWriter_fourcc(*'mp4v'),
+            fps, (W, H)
+        )
+
+        # track_history: { track_id: [(frame_idx, cx, cy, w, h), ...] }
+        # frame → [(id, x1, y1, x2, y2), ...] 로 변환
+        frame_boxes: dict = {}
+        for tid, traj in track_history.items():
+            for entry in traj:
+                fidx = entry[0]
+                cx, cy, bw, bh = entry[1], entry[2], entry[3], entry[4]
+                x1 = int(cx - bw / 2)
+                y1 = int(cy - bh / 2)
+                x2 = int(cx + bw / 2)
+                y2 = int(cy + bh / 2)
+                frame_boxes.setdefault(fidx, []).append(
+                    (tid, x1, y1, x2, y2))
+
+        fidx = 0
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            for (tid, x1, y1, x2, y2) in frame_boxes.get(fidx, []):
+                cv2.rectangle(frame, (x1, y1), (x2, y2),
+                            (0, 200, 255), 1)
+                cv2.putText(frame, f"#{tid}",
+                            (x1, max(0, y1 - 4)),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.35, (0, 200, 255), 1)
+            writer.write(frame)
+            fidx += 1
+
+        cap.release()
+        writer.release()
+        return output_path
 
     # ── 보고서 출력 ────────────────────────────────────────
     @staticmethod

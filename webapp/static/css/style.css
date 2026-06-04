@@ -1000,6 +1000,79 @@ a:hover { color: var(--color-blue-dark); }
     margin-bottom: 16px;
 }
 
+/* ── 영상 결과 카드 ─────────────────────────────────── */
+.video-result-card {
+    margin-bottom: 16px;
+}
+
+.video-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.video-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.video-label {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.32px;
+    color: var(--color-ink-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.video-label small {
+    font-weight: 400;
+    color: var(--color-ink-subtle);
+    margin-left: 4px;
+    text-transform: none;
+    letter-spacing: 0.16px;
+}
+
+.result-video {
+    width: 100%;
+    border: 1px solid var(--color-hairline);
+    background: #000;
+    display: block;
+}
+
+.video-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--color-ink-subtle);
+    letter-spacing: 0.32px;
+    padding: 6px 0;
+    border-top: 1px solid var(--color-hairline);
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legend-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--color-ink-subtle);
+    background: var(--color-surface-1);
+    padding: 1px 5px;
+    border: 1px solid var(--color-hairline);
+}
+
+@media (max-width: 672px) {
+    .video-grid { grid-template-columns: 1fr; }
+}
+
 /* ── WHO 배지 ───────────────────────────────────────── */
 .who-badge {
     padding: 4px 10px;
@@ -2352,6 +2425,7 @@ a:hover { color: var(--color-blue-dark); }
     .meaning-grid,
     .reason-grid,
     .ai-trust-grid { grid-template-columns: 1fr; }
+    .video-grid { grid-template-columns: 1fr; }
 
     .motility-row,
     .morph-bar-row { grid-template-columns: 1fr; gap: 6px; }
