@@ -179,3 +179,71 @@ class SpermTracker:
             'ALH_mean': round(float(np.mean(ALHs)), 2),
             'n_analyzed': len(VCLs),
         }
+
+    def grade_tracks(self,
+                     track_history: dict,
+                     fps: float = 50.0,
+                     um_per_px: float = 0.7031,
+                     str_min: float = 0.60,
+                     vap_min: float = 15.0,
+                     vcl_immotile: float = 18.0,
+                     min_track_len: int = 10) -> dict:
+        """정자별 운동성 3등급(PR/NP/IM) 분포 — 운동학 임계 기반 '보조 view'.
+
+        각 트랙(≥min_track_len)의 per-track CASA(VCL/VAP/STR)를
+        compute_sample_kinematics와 동일한 방식으로 계산해 등급화한다.
+
+        등급 규칙 (임계는 production 클린 궤적 85개에서 % MAE 최소화로 보정한 값):
+            IM : VCL < vcl_immotile
+            PR : (VAP ≥ vap_min) and (STR ≥ str_min)   (그 외 motile)
+            NP : 나머지
+
+        ※ 회귀 운동성 %가 주 추정치이며, 본 등급은 참고용(개별 트랙 임계 기반).
+        """
+        counts = {'PR': 0, 'NP': 0, 'IM': 0}
+
+        for tid, pts in track_history.items():
+            if len(pts) < min_track_len:
+                continue
+
+            coords = np.array([(cx, cy) for _, cx, cy in pts])
+            n          = len(coords)
+            total_time = (n - 1) * (1.0 / fps)
+
+            dists      = np.sqrt(np.sum(np.diff(coords, axis=0)**2, axis=1))
+            vcl        = (float(np.sum(dists)) * um_per_px) / total_time
+
+            straight = float(np.sqrt(
+                (coords[-1][0]-coords[0][0])**2 +
+                (coords[-1][1]-coords[0][1])**2))
+            vsl = (straight * um_per_px) / total_time
+
+            w = min(5, n)
+            smoothed = np.array([
+                coords[max(0, i-w//2):i+w//2+1].mean(axis=0)
+                for i in range(n)
+            ])
+            avg_path = float(np.sum(
+                np.sqrt(np.sum(np.diff(smoothed, axis=0)**2, axis=1))))
+            vap = (avg_path * um_per_px) / total_time
+            str_ = vsl / (vap + 1e-6)
+
+            if vcl < vcl_immotile:
+                counts['IM'] += 1
+            elif (vap >= vap_min) and (str_ >= str_min):
+                counts['PR'] += 1
+            else:
+                counts['NP'] += 1
+
+        n_graded = sum(counts.values())
+        if n_graded == 0:
+            return {}
+
+        return {
+            'grade_progressive':     round(100.0 * counts['PR'] / n_graded, 1),
+            'grade_non_progressive': round(100.0 * counts['NP'] / n_graded, 1),
+            'grade_immotile':        round(100.0 * counts['IM'] / n_graded, 1),
+            'n_graded':              n_graded,
+            'thresholds': {'STR_min': str_min, 'VAP_min': vap_min,
+                           'VCL_immotile': vcl_immotile},
+        }

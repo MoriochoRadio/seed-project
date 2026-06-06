@@ -26,7 +26,17 @@ class SpermAnalysisPipeline:
                  yolo_path    : str = None,
                  model_path   : str = None,
                  tracker_config: str = None,
-                 morph_path   : str = None):
+                 morph_path   : str = None,
+                 per_sperm_view: bool = True,
+                 grade_str_min: float = 0.60,
+                 grade_vap_min: float = 15.0,
+                 grade_vcl_immotile: float = 18.0):
+
+        # per-sperm 운동성 등급(보조 view) 설정 (기본 on; 임계는 데이터 보정값)
+        self.per_sperm_view     = per_sperm_view
+        self.grade_str_min      = grade_str_min
+        self.grade_vap_min      = grade_vap_min
+        self.grade_vcl_immotile = grade_vcl_immotile
 
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -129,6 +139,15 @@ class SpermAnalysisPipeline:
         kinematics = self.tracker.compute_sample_kinematics(
             track_history, fps=50.0)
 
+        # Step 4b: per-sperm 운동성 등급화 (보조 view, 기본 on / 추가만)
+        motility_grades = {}
+        if self.per_sperm_view:
+            motility_grades = self.tracker.grade_tracks(
+                track_history, fps=50.0,
+                str_min=self.grade_str_min,
+                vap_min=self.grade_vap_min,
+                vcl_immotile=self.grade_vcl_immotile)
+
         # Step 5: 운동성 예측
         motility = self.analyzer.predict(features)
         if verbose:
@@ -170,6 +189,7 @@ class SpermAnalysisPipeline:
             **interp,
             **quality,
             'kinematics':         kinematics,
+            'motility_grades':    motility_grades,
             'morphology':         morphology,
             'morphology_interp':  morphology_interp,
             **overall,
@@ -264,6 +284,23 @@ class SpermAnalysisPipeline:
                 for line in kint['interpretations']:
                     print(f"     {line}")
                 print(f"  📌 {kint['ppms_note']}")
+
+        # ── 정자별 운동성 등급 (보조 view) ────────────────
+        g = result.get('motility_grades')
+        if g:
+            th = g.get('thresholds', {})
+            print(f"\n{'─'*W}")
+            print(f"【 정자별 운동성 등급 (참고용) 】  "
+                  f"(등급화 정자: {g['n_graded']}개)")
+            print(f"{'─'*W}")
+            print(f"  ※ 운동학 임계 기반 보조 지표입니다. 위의 운동성 %(회귀)가 "
+                  f"주 추정치이며,\n"
+                  f"     개별 등급은 참고용이고 임계는 데이터 보정값입니다.")
+            print(f"\n  전진 운동(PR):     {g['grade_progressive']:>5.1f}%")
+            print(f"  비전진 운동(NP):   {g['grade_non_progressive']:>5.1f}%")
+            print(f"  비운동(IM):        {g['grade_immotile']:>5.1f}%")
+            print(f"  └ 임계: STR≥{th.get('STR_min')} · VAP≥{th.get('VAP_min')} "
+                  f"· VCL<{th.get('VCL_immotile')} (µm/s)")
 
         # ── 형태 분석 ─────────────────────────────────────
         if result.get('morphology') and result['morphology']:
