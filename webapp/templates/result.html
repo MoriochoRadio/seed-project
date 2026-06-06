@@ -436,7 +436,7 @@
     <div class="report-card">
         <div class="card-header">
             <h2>🎯 정자 운동 패턴 (CASA 키네마틱)</h2>
-            <span class="who-badge">7가지 파라미터</span>
+            <span class="who-badge">9가지 파라미터</span>
         </div>
 
         <!-- ╭───── 일반인용 설명 박스 ─────╮ -->
@@ -447,7 +447,7 @@
                 <p>
                     정자가 단순히 "움직이는지/안 움직이는지"만 보는 것이
                     아니라, <em>얼마나 빠르게</em>, <em>얼마나 똑바로</em>,
-                    <em>어떤 패턴으로</em> 움직이는지를 7가지 수치로
+                    <em>어떤 패턴으로</em> 움직이는지를 9가지 수치로
                     정밀하게 측정한 것입니다.
                 </p>
                 <p>
@@ -561,6 +561,60 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 측방 진동 지표 -->
+        {% if k.get('BCF_mean') is not none %}
+        <h4 class="kinematic-subtitle">📡 측방 진동 지표</h4>
+
+        <div class="for-simple sub-explain">
+            정자 머리가 <strong>좌우로 얼마나 진동하는지</strong>를
+            측정합니다. 편모(꼬리)의 박동 패턴과 진폭을 정량화한
+            지표입니다.
+        </div>
+
+        <div class="kinematic-grid">
+            <div class="kine-card {{ 'kine-ok' if k.get('ALH_mean', 0) >= 2.0
+                                else 'kine-warn' }}">
+                <div class="kine-name">ALH <small>측방 진폭 최댓값</small></div>
+                <div class="kine-value">
+                    {{ "%.2f"|format(k.get('ALH_mean', 0)) }}
+                    <span>µm</span>
+                </div>
+                <div class="kine-ref">기준 ≥ 2.0 µm</div>
+                <div class="for-simple kine-explain">
+                    정자 머리가 <strong>평균 경로에서 최대로 벗어나는
+                    거리</strong>예요. 너무 작으면 꼬리 움직임이 약하다는
+                    의미입니다.
+                </div>
+            </div>
+            <div class="kine-card {{ 'kine-ok' if k.get('BCF_mean', 0) >= 16.0
+                                else 'kine-warn' }}">
+                <div class="kine-name">BCF <small>편모 박동 빈도</small></div>
+                <div class="kine-value">
+                    {{ "%.1f"|format(k.get('BCF_mean', 0)) }}
+                    <span>Hz</span>
+                </div>
+                <div class="kine-ref">기준 ≥ 16 Hz</div>
+                <div class="for-simple kine-explain">
+                    정자 꼬리가 <strong>1초에 몇 번 좌우로 박동하는지</strong>를
+                    나타내요. 박동이 느리면 추진력이 부족한 신호입니다.
+                </div>
+            </div>
+            <div class="kine-card kine-ref-only">
+                <div class="kine-name">PAW <small>측방 진폭 평균</small></div>
+                <div class="kine-value">
+                    {{ "%.2f"|format(k.get('PAW_mean', 0)) }}
+                    <span>µm</span>
+                </div>
+                <div class="kine-ref">참고용 (WHO 외 지표)</div>
+                <div class="for-simple kine-explain">
+                    ALH의 보완 지표로,
+                    <strong>측방 진폭의 평균값</strong>입니다.
+                    이상치에 덜 민감한 안정적인 측정값이에요.
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- ╭───── 일반인용 종합 해석 ─────╮ -->
         {% set issues = 0 %}
@@ -569,6 +623,8 @@
         {% if k.VAP_mean < 20 %}{% set issues = issues + 1 %}{% endif %}
         {% if k.STR_mean < 0.80 %}{% set issues = issues + 1 %}{% endif %}
         {% if k.LIN_mean < 0.50 %}{% set issues = issues + 1 %}{% endif %}
+        {% if k.get('ALH_mean', 0) < 2.0 %}{% set issues = issues + 1 %}{% endif %}
+        {% if k.get('BCF_mean', 0) < 16.0 %}{% set issues = issues + 1 %}{% endif %}
 
         <div class="for-simple result-summary
                     {{ 'summary-good' if issues == 0
@@ -582,7 +638,7 @@
             <div class="summary-content">
                 <strong>요약하면:</strong>
                 {% if issues == 0 %}
-                    7가지 키네마틱 지표가 대부분 정상 범위에 있습니다.
+                    9가지 키네마틱 지표가 대부분 정상 범위에 있습니다.
                     정자의 운동 패턴이 효율적이고 안정적이에요.
                 {% elif issues <= 2 %}
                     일부 지표가 기준에 미치지 못합니다.

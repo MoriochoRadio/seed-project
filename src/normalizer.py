@@ -140,9 +140,6 @@ class VideoNormalizer:
             cap.release()
             return self._error("출력 영상 생성 실패")
 
-        # CLAHE 한 번만 생성
-        clahe = cv2.createCLAHE(
-            clipLimit=2.0, tileGridSize=(8, 8))
 
         last_pct = -1
         for i in range(max_frames):
@@ -150,12 +147,7 @@ class VideoNormalizer:
             if not ret:
                 break
 
-            # CLAHE 대비 향상 (정자 가시성 ↑)
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = clahe.apply(gray)
-            frame_out = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-
-            out.write(frame_out)
+            out.write(frame)
 
             if progress_callback:
                 pct = int((i + 1) / max_frames * 100)
@@ -284,9 +276,6 @@ class VideoNormalizer:
             target_orig_indices.add(orig_idx)
             target_frame_idx += 1
 
-        clahe = cv2.createCLAHE(
-            clipLimit=2.0, tileGridSize=(8, 8))
-
         frames_written = 0
         orig_frame_idx = 0
         last_reported_pct = -1
@@ -305,12 +294,8 @@ class VideoNormalizer:
                         interpolation=cv2.INTER_AREA
                         if orig_width > TARGET_WIDTH
                         else cv2.INTER_LINEAR)
-
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                gray = clahe.apply(gray)
-
-                frame_out = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-                out.write(frame_out)
+                    
+                out.write(frame)
                 frames_written += 1
 
             orig_frame_idx += 1
