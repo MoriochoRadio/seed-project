@@ -150,19 +150,8 @@ class SpermTracker:
             f"{name}_mean": round(float(arr[:, i].mean()), 3)
             for i, name in enumerate(CASA_NAMES)
         }
-        print(f"[DEBUG] kinematics keys: {list(out.keys())}")
+
         return out
-        '''
-        return {
-            'VCL_mean': round(float(np.mean(VCLs)), 1),
-            'VSL_mean': round(float(np.mean(VSLs)), 1),
-            'VAP_mean': round(float(np.mean(VAPs)), 1),
-            'LIN_mean': round(float(np.mean(LINs)), 3),
-            'STR_mean': round(float(np.mean(STRs)), 3),
-            'WOB_mean': round(float(np.mean(WOBs)), 3),
-            'ALH_mean': round(float(np.mean(ALHs)), 2),
-            'n_analyzed': len(VCLs),
-        }'''
 
     def grade_tracks(self,
                      track_history: dict,
@@ -185,6 +174,7 @@ class SpermTracker:
         ※ 회귀 운동성 %가 주 추정치이며, 본 등급은 참고용(개별 트랙 임계 기반).
         """
         counts = {'PR': 0, 'NP': 0, 'IM': 0}
+        tid_grades = {}  
 
         for tid, pts in track_history.items():
             if len(pts) < min_track_len:
@@ -214,10 +204,13 @@ class SpermTracker:
 
             if vcl < vcl_immotile:
                 counts['IM'] += 1
+                tid_grades[tid] = 'IM'   # ← 추가
             elif (vap >= vap_min) and (str_ >= str_min):
                 counts['PR'] += 1
+                tid_grades[tid] = 'PR'   # ← 추가
             else:
                 counts['NP'] += 1
+                tid_grades[tid] = 'NP'   # ← 추가
 
         n_graded = sum(counts.values())
         if n_graded == 0:
@@ -228,6 +221,7 @@ class SpermTracker:
             'grade_non_progressive': round(100.0 * counts['NP'] / n_graded, 1),
             'grade_immotile':        round(100.0 * counts['IM'] / n_graded, 1),
             'n_graded':              n_graded,
+            'tid_grades':            tid_grades, 
             'thresholds': {'STR_min': str_min, 'VAP_min': vap_min,
                            'VCL_immotile': vcl_immotile},
         }

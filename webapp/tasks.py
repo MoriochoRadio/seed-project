@@ -10,7 +10,7 @@ import uuid
 import time
 import threading
 import traceback
-
+from src.annotator import create_annotated_video
 
 # ── 작업 큐 (메모리 기반) ─────────────────────────────────
 # 실제 운영에선 Redis 등을 쓰지만 데모는 메모리로 충분
@@ -105,7 +105,6 @@ def run_analysis(job_id: str) -> None:
             # 정규화 진행
             normalizer = VideoNormalizer()
 
-            import os
             base, _ = os.path.splitext(job['video_path'])
             normalized_path = f"{base}_normalized.mp4"
 
@@ -218,6 +217,23 @@ def run_analysis(job_id: str) -> None:
             is_full_norm or
             len(critical_issues) > 0
         )
+        # ── annotated video 생성 ──────────────────────────  ← 여기 추가
+        try:
+            base, _ = os.path.splitext(job['video_path'])
+            annotated_path = f"{base}_annotated.mp4"
+            track_history  = result.get('_track_history', {})
+            success = create_annotated_video(
+                video_path      = analysis_video_path,
+                output_path     = annotated_path,
+                track_history   = track_history,
+                motility_grades = result.get('motility_grades'),
+            )
+            if success:
+                result['annotated_video_path'] = annotated_path
+                result['original_video_path']  = analysis_video_path
+        except Exception as e:
+                print(f"⚠️  annotated video 생성 실패: {e}")
+                traceback.print_exc()
 
         # 완료
         job['status']    = 'done'

@@ -430,6 +430,73 @@
         </div>
     </div>
 
+    <!-- ── 분석 영상 ──────────────────────────────────────── -->
+    {% if result.annotated_video_path or result.original_video_path %}
+    <div class="report-card">
+        <div class="card-header">
+            <h2>🎬 분석 영상</h2>
+            <span class="who-badge">원본 + AI 추론</span>
+        </div>
+
+        <div class="for-simple explain-box">
+            <div class="explain-icon">💡</div>
+            <div class="explain-content">
+                <strong>분석 영상이란?</strong>
+                <p>
+                    AI가 각 정자를 추적하고 운동성 등급을 판정한 결과를
+                    영상으로 시각화한 것입니다.
+                    <strong style="color:#1D9E75;">초록(PR)</strong>은 전진,
+                    <strong style="color:#C87800;">주황(NP)</strong>은 비전진,
+                    <strong style="color:#888;">회색(IM)</strong>은 비운동 정자입니다.
+                </p>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;
+                    gap:16px;margin-bottom:8px;">
+
+            <!-- 원본 영상 -->
+            <div>
+                <div style="font-size:12px;font-weight:500;
+                            color:var(--color-text-secondary);
+                            margin-bottom:6px;">원본 영상</div>
+                <video controls
+                    style="width:100%;border-radius:8px;
+                            background:#000;max-height:300px;"
+                    preload="metadata">
+                    <source src="/video/{{ job_id }}/original"
+                            type="video/mp4">
+                    브라우저가 영상을 지원하지 않습니다.
+                </video>
+            </div>
+
+            <!-- AI 추론 영상 -->
+            <div>
+                <div style="font-size:12px;font-weight:500;
+                            color:var(--color-text-secondary);
+                            margin-bottom:6px;">AI 추론 영상</div>
+                {% if result.annotated_video_path %}
+                <video controls
+                    style="width:100%;border-radius:8px;
+                            background:#000;max-height:300px;"
+                    preload="metadata">
+                    <source src="/video/{{ job_id }}/annotated"
+                            type="video/mp4">
+                    브라우저가 영상을 지원하지 않습니다.
+                </video>
+                {% else %}
+                <div style="width:100%;height:200px;border-radius:8px;
+                            background:#f5f5f5;display:flex;
+                            align-items:center;justify-content:center;
+                            font-size:13px;color:#888;">
+                    추론 영상 생성 실패
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- ── 키네마틱 분석 ──────────────────────────────── -->
     {% if result.kinematics %}
     {% set k = result.kinematics %}

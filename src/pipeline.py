@@ -189,6 +189,7 @@ class SpermAnalysisPipeline:
             **interp,
             **quality,
             'kinematics':         kinematics,
+            '_track_history':     track_history,
             'motility_grades':    motility_grades,
             'morphology':         morphology,
             'morphology_interp':  morphology_interp,

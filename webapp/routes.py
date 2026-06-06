@@ -120,6 +120,26 @@ def result(job_id: str):
                            result=job['result'],
                            video_name=job['video_name'])
 
+@bp.route('/video/<job_id>/<kind>')
+def serve_video(job_id, kind):
+    """원본/annotated 영상 서빙"""
+    from flask import send_file
+    job = get_job(job_id)
+    if not job or job['status'] != 'done':
+        return '', 404
+
+    if kind == 'original':
+        path = job['video_path']
+    elif kind == 'annotated':
+        path = job['result'].get('annotated_video_path', '')
+    else:
+        return '', 404
+
+    if not path or not os.path.exists(path):
+        return '', 404
+
+    return send_file(path, mimetype='video/mp4')
+
 
 # ── 거부 페이지 ──────────────────────────────────────────
 @bp.route('/rejected/<job_id>')
