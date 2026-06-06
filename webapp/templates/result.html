@@ -657,6 +657,133 @@
     </div>
     {% endif %}
 
+    <!-- ── 정자별 운동성 등급 분포 ────────────────────────── -->
+    {% if result.motility_grades %}
+    {% set mg = result.motility_grades %}
+    <div class="report-card">
+        <div class="card-header">
+            <h2>🔬 정자별 운동성 등급 분포</h2>
+            <span class="who-badge">개체 단위 분석</span>
+        </div>
+
+        <div class="for-simple explain-box">
+            <div class="explain-icon">💡</div>
+            <div class="explain-content">
+                <strong>정자별 등급이란?</strong>
+                <p>
+                    전체 운동성 % 외에, <em>추적된 정자 한 마리 한 마리</em>가
+                    어느 등급에 속하는지를 보여줍니다.
+                    같은 35%라도 경계선 근처 정자가 많은지,
+                    확실한 전진 정자가 많은지에 따라 임상적 의미가 다릅니다.
+                </p>
+            </div>
+        </div>
+
+        <!-- 등급별 카드 -->
+        <div class="kinematic-grid" style="margin-bottom:16px;">
+            <div class="kine-card {{ 'kine-ok' if mg.grade_progressive >= 32
+                                else 'kine-warn' }}">
+                <div class="kine-name">
+                    🟢 전진 운동
+                    <small>Progressive</small>
+                </div>
+                <div class="kine-value">
+                    {{ "%.1f"|format(mg.grade_progressive) }}
+                    <span>%</span>
+                </div>
+                <div class="kine-ref">기준 ≥ 32%</div>
+            </div>
+            <div class="kine-card kine-warn">
+                <div class="kine-name">
+                    🔵 비전진 운동
+                    <small>Non-Progressive</small>
+                </div>
+                <div class="kine-value">
+                    {{ "%.1f"|format(mg.grade_non_progressive) }}
+                    <span>%</span>
+                </div>
+                <div class="kine-ref">참고용</div>
+            </div>
+            <div class="kine-card kine-warn">
+                <div class="kine-name">
+                    ⚫ 비운동
+                    <small>Immotile</small>
+                </div>
+                <div class="kine-value">
+                    {{ "%.1f"|format(mg.grade_immotile) }}
+                    <span>%</span>
+                </div>
+                <div class="kine-ref">참고용</div>
+            </div>
+        </div>
+
+        <!-- 분포 막대 -->
+        <div style="margin-bottom:16px;">
+            <div style="font-size:12px;color:var(--color-text-secondary,#888);
+                        margin-bottom:6px;">
+                등급 분포 (추적된 {{ mg.n_graded }}마리 기준)
+            </div>
+            <div style="display:flex;height:24px;border-radius:6px;
+                        overflow:hidden;gap:2px;">
+                {% if mg.grade_progressive > 0 %}
+                <div style="width:{{ mg.grade_progressive }}%;
+                            background:#1D9E75;
+                            display:flex;align-items:center;
+                            justify-content:center;
+                            font-size:11px;color:#fff;font-weight:500;">
+                    {% if mg.grade_progressive >= 10 %}
+                    {{ "%.0f"|format(mg.grade_progressive) }}%
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if mg.grade_non_progressive > 0 %}
+                <div style="width:{{ mg.grade_non_progressive }}%;
+                            background:#378ADD;
+                            display:flex;align-items:center;
+                            justify-content:center;
+                            font-size:11px;color:#fff;font-weight:500;">
+                    {% if mg.grade_non_progressive >= 10 %}
+                    {{ "%.0f"|format(mg.grade_non_progressive) }}%
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if mg.grade_immotile > 0 %}
+                <div style="width:{{ mg.grade_immotile }}%;
+                            background:#888;
+                            display:flex;align-items:center;
+                            justify-content:center;
+                            font-size:11px;color:#fff;font-weight:500;">
+                    {% if mg.grade_immotile >= 10 %}
+                    {{ "%.0f"|format(mg.grade_immotile) }}%
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <div style="display:flex;gap:16px;margin-top:6px;
+                        font-size:11px;
+                        color:var(--color-text-secondary,#888);">
+                <span>🟢 전진</span>
+                <span>🔵 비전진</span>
+                <span>⚫ 비운동</span>
+            </div>
+        </div>
+
+        <!-- 판정 기준 -->
+        <div style="font-size:12px;
+                    color:var(--color-text-secondary,#888);
+                    padding:10px 12px;
+                    background:var(--color-background-secondary,#f5f5f5);
+                    border-radius:8px;line-height:1.7;">
+            판정 기준 —
+            전진(PR): VAP ≥ {{ mg.thresholds.VAP_min }} µm/s
+            이고 STR ≥ {{ mg.thresholds.STR_min }} /
+            비운동(IM): VCL &lt; {{ mg.thresholds.VCL_immotile }} µm/s /
+            비전진(NP): 그 외<br>
+            ※ 추적된 {{ mg.n_graded }}마리를 대상으로 개별 판정한 결과입니다.
+        </div>
+    </div>
+    {% endif %}
+
     <!-- ── 형태 분석 ──────────────────────────────────── -->
     {% if result.morphology %}
     {% set m = result.morphology %}
