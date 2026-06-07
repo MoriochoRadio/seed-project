@@ -11,6 +11,7 @@ pipeline.py  ·  AI-CASA 통합 파이프라인 (Phase 1-3)
 import os
 import cv2
 import numpy as np
+from collections import defaultdict
 
 from .detector    import SpermDetector
 from .tracker     import SpermTracker
@@ -107,6 +108,50 @@ class SpermAnalysisPipeline:
         cap.release()
         return crops
 
+    # ── tid별 정자 크롭 추출 ───────────────────────────────
+    def _extract_crops_per_tid(self, video_path: str,
+                               track_history: dict) -> dict:
+        """track_history의 (fidx,cx,cy,w,h)를 활용해 tid별 크롭 추출"""
+        frame_map = defaultdict(list)
+        for tid, pts in track_history.items():
+            for fidx, cx, cy, w, h in pts:
+                frame_map[int(fidx)].append((tid, cx, cy, w, h))
+
+        if not frame_map:
+            return {}
+
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4, 4))
+        cap   = cv2.VideoCapture(video_path)
+        H_vid = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        W_vid = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        crops_per_tid = defaultdict(list)
+
+        for fidx in sorted(frame_map.keys()):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, fidx)
+            ret, frame = cap.read()
+            if not ret:
+                continue
+            for tid, cx, cy, w, h in frame_map[fidx]:
+                if w < 15 or h < 15:
+                    continue
+                x1 = int(cx - w / 2)
+                y1 = int(cy - h / 2)
+                x2 = int(cx + w / 2)
+                y2 = int(cy + h / 2)
+                pad = max(int(w), int(h)) // 2
+                x1p = max(0, x1 - pad)
+                y1p = max(0, y1 - pad)
+                x2p = min(W_vid, x2 + pad)
+                y2p = min(H_vid, y2 + pad)
+                crop = frame[y1p:y2p, x1p:x2p]
+                if crop.size == 0:
+                    continue
+                gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                crops_per_tid[tid].append(clahe.apply(gray))
+
+        cap.release()
+        return dict(crops_per_tid)
+
     # ── 전체 분석 ──────────────────────────────────────────
     def analyze(self, video_path: str,
                 verbose: bool = True) -> dict:
@@ -156,17 +201,31 @@ class SpermAnalysisPipeline:
         # Step 6: 형태 분석
         morphology        = {}
         morphology_interp = {}
+        morph_per_tid     = {}
         if self.morph_analyzer is not None:
             crops = self._extract_crops(video_path)
             if crops:
-                morphology = self.morph_analyzer.analyze_crops(
-                    crops)
+                morphology = self.morph_analyzer.analyze_crops(crops)
                 morphology_interp = \
-                    self.morph_analyzer.interpret_morphology(
-                        morphology)
+                    self.morph_analyzer.interpret_morphology(morphology)
+            crops_per_tid = self._extract_crops_per_tid(
+                video_path, track_history)
+            if crops_per_tid:
+                morph_per_tid = self.morph_analyzer.analyze_per_tid(
+                    crops_per_tid)
             if verbose:
                 print(f"[5/5] 형태 분석 완료 "
-                      f"(크롭 {len(crops)}개)")
+                      f"(크롭 {len(crops)}개, tid {len(morph_per_tid)}개)")
+
+        # Step 6b: per-sperm 결합 (운동성 등급 + 형태)
+        per_sperm = {}
+        tid_grades = motility_grades.get('tid_grades', {})
+        all_tids = set(tid_grades) | set(morph_per_tid)
+        for tid in all_tids:
+            per_sperm[tid] = {
+                'motility_grade': tid_grades.get(tid),
+                'morphology':     morph_per_tid.get(tid),
+            }
 
         # Step 7: WHO 해석 + 신뢰도
         interp  = interpret_motility(
@@ -193,6 +252,7 @@ class SpermAnalysisPipeline:
             'motility_grades':    motility_grades,
             'morphology':         morphology,
             'morphology_interp':  morphology_interp,
+            'per_sperm':          per_sperm,
             **overall,
         }
 

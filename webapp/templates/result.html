@@ -263,173 +263,6 @@
     </div>
     {% endif %}
 
-    <!-- ── 운동성 분석 ────────────────────────────────── -->
-    <div class="report-card">
-        <div class="card-header">
-            <h2>📊 정자 운동성 분석</h2>
-            <span class="who-badge">WHO 6판 기준</span>
-        </div>
-
-        <!-- ╭───── 일반인용 설명 박스 ─────╮ -->
-        <div class="for-simple explain-box">
-            <div class="explain-icon">💡</div>
-            <div class="explain-content">
-                <strong>운동성이란?</strong>
-                <p>
-                    정자가 얼마나 잘 움직이는지를 나타내는 지표입니다.
-                    정자는 난자에 도달하기 위해 <em>스스로 헤엄쳐야</em> 하므로,
-                    <em>앞으로 똑바로 잘 나아가는 정자가 많을수록</em>
-                    임신 가능성이 높아집니다.
-                </p>
-                <p class="explain-criteria">
-                    📋 <strong>WHO 6판 기준 (2021년)</strong>이 정상 범위로
-                    제시하는 수치:
-                </p>
-                <ul class="explain-list">
-                    <li>전진 운동성 — <strong>32% 이상</strong></li>
-                    <li>총 운동성 — <strong>40% 이상</strong></li>
-                    <li>비운동성 — <strong>50% 미만</strong> (낮을수록 좋음)</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="motility-grid">
-            <!-- 도넛 차트 -->
-            <div class="motility-chart">
-                <canvas id="motility-donut" width="240" height="240"></canvas>
-                <div class="donut-center">
-                    <div class="donut-total">
-                        {{ "%.1f"|format(result.total_motile or 0) }}<span>%</span>
-                    </div>
-                    <div class="donut-label">총 운동성</div>
-                </div>
-            </div>
-
-            <!-- 수치 + 막대 -->
-            <div class="motility-bars">
-                {% set prog = result.progressive %}
-                {% set non_prog = result.non_progressive %}
-                {% set immotile = result.immotile %}
-
-                <div class="motility-row">
-                    <div class="motility-label">
-                        <span class="motility-dot dot-progressive"></span>
-                        앞으로 잘 나아가는 정자
-                        <small>(전진 운동성)</small>
-                    </div>
-                    <div class="motility-bar-wrap">
-                        <div class="motility-bar bar-progressive"
-                             style="width: {{ prog }}%;"></div>
-                    </div>
-                    <div class="motility-value">
-                        {{ "%.1f"|format(prog) }}<span>%</span>
-                    </div>
-                </div>
-
-                <div class="motility-row">
-                    <div class="motility-label">
-                        <span class="motility-dot dot-nonprog"></span>
-                        조금 움직이는 정자
-                        <small>(비전진 운동성)</small>
-                    </div>
-                    <div class="motility-bar-wrap">
-                        <div class="motility-bar bar-nonprog"
-                             style="width: {{ non_prog }}%;"></div>
-                    </div>
-                    <div class="motility-value">
-                        {{ "%.1f"|format(non_prog) }}<span>%</span>
-                    </div>
-                </div>
-
-                <div class="motility-row">
-                    <div class="motility-label">
-                        <span class="motility-dot dot-immotile"></span>
-                        움직이지 않는 정자
-                        <small>(비운동성)</small>
-                    </div>
-                    <div class="motility-bar-wrap">
-                        <div class="motility-bar bar-immotile"
-                             style="width: {{ immotile }}%;"></div>
-                    </div>
-                    <div class="motility-value">
-                        {{ "%.1f"|format(immotile) }}<span>%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ╭───── 일반인용 추가 설명 ─────╮ -->
-        <div class="for-simple meaning-grid">
-            <div class="meaning-card">
-                <div class="meaning-title">
-                    🟢 앞으로 잘 나아가는 정자
-                </div>
-                <div class="meaning-text">
-                    난자에 도달할 가능성이 가장 높은 정자입니다.
-                    똑바로 일정 속도 이상으로 헤엄치는 정자를 말합니다.
-                    <strong>이 비율이 높을수록 임신 가능성이 좋습니다.</strong>
-                </div>
-            </div>
-            <div class="meaning-card">
-                <div class="meaning-title">
-                    🔵 조금 움직이는 정자
-                </div>
-                <div class="meaning-text">
-                    움직이긴 하지만 제자리를 맴돌거나
-                    좌우로 흔들리기만 하는 정자입니다.
-                    <strong>난자까지 도달할 가능성은 낮습니다.</strong>
-                </div>
-            </div>
-            <div class="meaning-card">
-                <div class="meaning-title">
-                    ⚫ 움직이지 않는 정자
-                </div>
-                <div class="meaning-text">
-                    아예 움직이지 않거나 죽은 정자입니다.
-                    <strong>이 비율이 너무 높으면 정자 활력에
-                    문제가 있을 수 있습니다.</strong>
-                </div>
-            </div>
-        </div>
-
-        <!-- WHO 기준 해석 -->
-        <div class="interpretation-block">
-            <h4>🔍 WHO 기준 검토 결과</h4>
-            <ul class="interpretation-list">
-                {% for line in result.interpretation %}
-                <li>{{ line }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <!-- ╭───── 일반인용 결과 요약 ─────╮ -->
-        <div class="for-simple result-summary
-                    {{ 'summary-good' if result.level == 'normal'
-                    else 'summary-warn' if result.level == 'warning'
-                    else 'summary-bad' }}">
-            <div class="summary-icon">
-                {% if result.level == 'normal' %}✅
-                {% elif result.level == 'warning' %}⚠️
-                {% else %}🔴{% endif %}
-            </div>
-            <div class="summary-content">
-                <strong>요약하면:</strong>
-                {% if result.level == 'normal' %}
-                    운동성이 WHO 정상 기준을 잘 충족하고 있습니다.
-                    현재 상태를 유지하시면 됩니다.
-                {% elif result.level == 'warning' %}
-                    일부 수치가 정상 기준에 약간 못 미치지만 심각한 수준은
-                    아닙니다. 생활 습관 개선(금연, 금주, 규칙적 운동, 균형
-                    잡힌 식사)으로 개선될 수 있습니다.
-                {% else %}
-                    여러 운동성 지표가 정상 기준보다 낮습니다.
-                    정확한 진단과 치료 방향을 위해 비뇨의학과 또는 난임클리닉
-                    전문의 상담이 필요합니다.
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
     <!-- ── 분석 영상 ──────────────────────────────────────── -->
     {% if result.annotated_video_path or result.original_video_path %}
     <div class="report-card">
@@ -496,6 +329,167 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- ── 운동성 분석 (통합) ──────────────────────────── -->
+    {# ── 수치 소스: 정자별 등급 분포(mg) 우선, 없으면 회귀 모델 값 #}
+    {% if result.motility_grades %}
+    {% set mg   = result.motility_grades %}
+    {% set prog      = mg.grade_progressive %}
+    {% set non_prog  = mg.grade_non_progressive %}
+    {% set immotile  = mg.grade_immotile %}
+    {% else %}
+    {% set mg        = none %}
+    {% set prog      = result.progressive %}
+    {% set non_prog  = result.non_progressive %}
+    {% set immotile  = result.immotile %}
+    {% endif %}
+    {# WHO 기준 통과 여부 #}
+    {% set pr_ok    = prog >= 32 %}
+    {% set total_ok = result.total_motile >= 40 %}
+    {% set im_ok    = immotile < 50 %}
+    <div class="report-card">
+        <div class="card-header">
+            <h2>📊 정자 운동성 분석</h2>
+            <span class="who-badge">WHO 6판 기준</span>
+        </div>
+
+        <!-- 운동성 개념 설명 (일반인용) -->
+        <div class="for-simple explain-box">
+            <div class="explain-icon">💡</div>
+            <div class="explain-content">
+                <strong>운동성이란?</strong>
+                <p>
+                    정자가 얼마나 잘 움직이는지를 나타내는 지표입니다.
+                    정자는 난자에 도달하기 위해 <em>스스로 헤엄쳐야</em> 하므로,
+                    <em>전진 운동(PR) 비율이 높을수록</em> 임신 가능성이 높아집니다.
+                </p>
+                <p class="explain-criteria">
+                    📋 <strong>WHO 6판 기준 (2021년)</strong> 정상 범위:
+                </p>
+                <ul class="explain-list">
+                    <li>전진 운동(PR) — <strong>32% 이상</strong></li>
+                    <li>총 운동성 — <strong>40% 이상</strong></li>
+                    <li>비운동(IM) — <strong>50% 미만</strong> (낮을수록 좋음)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 도넛 차트 + 수치 -->
+        <div class="motility-grid">
+            <div class="motility-chart">
+                <canvas id="motility-donut" width="240" height="240"></canvas>
+                <div class="donut-center">
+                    <div class="donut-total">
+                        {{ "%.1f"|format(result.total_motile or 0) }}<span>%</span>
+                    </div>
+                    <div class="donut-label">총 운동성</div>
+                </div>
+            </div>
+            <div class="motility-bars">
+                <div class="motility-row">
+                    <div class="motility-label">
+                        <span class="motility-dot dot-progressive"></span>
+                        🟢 전진 운동 <small>(PR)</small>
+                    </div>
+                    <div class="motility-bar-wrap">
+                        <div class="motility-bar bar-progressive" style="width:{{ prog }}%;"></div>
+                    </div>
+                    <div class="motility-value">{{ "%.1f"|format(prog) }}<span>%</span></div>
+                </div>
+                <div class="motility-row">
+                    <div class="motility-label">
+                        <span class="motility-dot dot-nonprog"></span>
+                        🔵 비전진 운동 <small>(NP)</small>
+                    </div>
+                    <div class="motility-bar-wrap">
+                        <div class="motility-bar bar-nonprog" style="width:{{ non_prog }}%;"></div>
+                    </div>
+                    <div class="motility-value">{{ "%.1f"|format(non_prog) }}<span>%</span></div>
+                </div>
+                <div class="motility-row">
+                    <div class="motility-label">
+                        <span class="motility-dot dot-immotile"></span>
+                        ⚫ 비운동 <small>(IM)</small>
+                    </div>
+                    <div class="motility-bar-wrap">
+                        <div class="motility-bar bar-immotile" style="width:{{ immotile }}%;"></div>
+                    </div>
+                    <div class="motility-value">{{ "%.1f"|format(immotile) }}<span>%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 각 등급 의미 (일반인용) -->
+        <div class="for-simple meaning-grid">
+            <div class="meaning-card">
+                <div class="meaning-title">🟢 전진 운동 (PR)</div>
+                <div class="meaning-text">
+                    앞으로 똑바로 헤엄쳐 난자에 도달할 가능성이 가장 높은 정자입니다.
+                    <strong>이 비율이 높을수록 임신 가능성이 좋습니다.</strong>
+                </div>
+            </div>
+            <div class="meaning-card">
+                <div class="meaning-title">🔵 비전진 운동 (NP)</div>
+                <div class="meaning-text">
+                    움직이긴 하지만 제자리를 맴돌거나 좌우로 흔들리기만 하는 정자입니다.
+                    <strong>난자까지 도달할 가능성은 낮습니다.</strong>
+                </div>
+            </div>
+            <div class="meaning-card">
+                <div class="meaning-title">⚫ 비운동 (IM)</div>
+                <div class="meaning-text">
+                    아예 움직이지 않거나 죽은 정자입니다.
+                    <strong>이 비율이 너무 높으면 정자 활력에 문제가 있을 수 있습니다.</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- WHO 기준 검토 결과 -->
+        <div class="interpretation-block">
+            <h4>🔍 WHO 기준 검토 결과</h4>
+            <ul class="interpretation-list">
+                <li>{{ '✅' if pr_ok else '❌' }}
+                    전진 운동(PR) {{ "%.1f"|format(prog) }}%
+                    — {{ '정상' if pr_ok else '주의' }}
+                    (기준 32% 이상)</li>
+                <li>{{ '✅' if total_ok else '❌' }}
+                    총 운동성 {{ "%.1f"|format(result.total_motile or 0) }}%
+                    — {{ '정상' if total_ok else '주의' }}
+                    (기준 40% 이상)</li>
+                <li>{{ '✅' if im_ok else '❌' }}
+                    비운동(IM) {{ "%.1f"|format(immotile) }}%
+                    — {{ '정상 범위' if im_ok else '주의' }}
+                    (기준 50% 미만)</li>
+            </ul>
+        </div>
+
+        <!-- 결과 요약 (일반인용) -->
+        <div class="for-simple result-summary
+                    {{ 'summary-good' if result.level == 'normal'
+                    else 'summary-warn' if result.level == 'warning'
+                    else 'summary-bad' }}" style="margin-top:16px;">
+            <div class="summary-icon">
+                {% if result.level == 'normal' %}✅
+                {% elif result.level == 'warning' %}⚠️
+                {% else %}🔴{% endif %}
+            </div>
+            <div class="summary-content">
+                <strong>요약하면:</strong>
+                {% if result.level == 'normal' %}
+                    운동성이 WHO 정상 기준을 잘 충족하고 있습니다.
+                    현재 상태를 유지하시면 됩니다.
+                {% elif result.level == 'warning' %}
+                    일부 수치가 정상 기준에 약간 못 미치지만 심각한 수준은
+                    아닙니다. 생활 습관 개선(금연, 금주, 규칙적 운동, 균형
+                    잡힌 식사)으로 개선될 수 있습니다.
+                {% else %}
+                    여러 운동성 지표가 정상 기준보다 낮습니다.
+                    정확한 진단과 치료 방향을 위해 비뇨의학과 또는 난임클리닉
+                    전문의 상담이 필요합니다.
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
     <!-- ── 키네마틱 분석 ──────────────────────────────── -->
     {% if result.kinematics %}
@@ -724,133 +718,6 @@
     </div>
     {% endif %}
 
-    <!-- ── 정자별 운동성 등급 분포 ────────────────────────── -->
-    {% if result.motility_grades %}
-    {% set mg = result.motility_grades %}
-    <div class="report-card">
-        <div class="card-header">
-            <h2>🔬 정자별 운동성 등급 분포</h2>
-            <span class="who-badge">개체 단위 분석</span>
-        </div>
-
-        <div class="for-simple explain-box">
-            <div class="explain-icon">💡</div>
-            <div class="explain-content">
-                <strong>정자별 등급이란?</strong>
-                <p>
-                    전체 운동성 % 외에, <em>추적된 정자 한 마리 한 마리</em>가
-                    어느 등급에 속하는지를 보여줍니다.
-                    같은 35%라도 경계선 근처 정자가 많은지,
-                    확실한 전진 정자가 많은지에 따라 임상적 의미가 다릅니다.
-                </p>
-            </div>
-        </div>
-
-        <!-- 등급별 카드 -->
-        <div class="kinematic-grid" style="margin-bottom:16px;">
-            <div class="kine-card {{ 'kine-ok' if mg.grade_progressive >= 32
-                                else 'kine-warn' }}">
-                <div class="kine-name">
-                    🟢 전진 운동
-                    <small>Progressive</small>
-                </div>
-                <div class="kine-value">
-                    {{ "%.1f"|format(mg.grade_progressive) }}
-                    <span>%</span>
-                </div>
-                <div class="kine-ref">기준 ≥ 32%</div>
-            </div>
-            <div class="kine-card kine-warn">
-                <div class="kine-name">
-                    🔵 비전진 운동
-                    <small>Non-Progressive</small>
-                </div>
-                <div class="kine-value">
-                    {{ "%.1f"|format(mg.grade_non_progressive) }}
-                    <span>%</span>
-                </div>
-                <div class="kine-ref">참고용</div>
-            </div>
-            <div class="kine-card kine-warn">
-                <div class="kine-name">
-                    ⚫ 비운동
-                    <small>Immotile</small>
-                </div>
-                <div class="kine-value">
-                    {{ "%.1f"|format(mg.grade_immotile) }}
-                    <span>%</span>
-                </div>
-                <div class="kine-ref">참고용</div>
-            </div>
-        </div>
-
-        <!-- 분포 막대 -->
-        <div style="margin-bottom:16px;">
-            <div style="font-size:12px;color:var(--color-text-secondary,#888);
-                        margin-bottom:6px;">
-                등급 분포 (추적된 {{ mg.n_graded }}마리 기준)
-            </div>
-            <div style="display:flex;height:24px;border-radius:6px;
-                        overflow:hidden;gap:2px;">
-                {% if mg.grade_progressive > 0 %}
-                <div style="width:{{ mg.grade_progressive }}%;
-                            background:#1D9E75;
-                            display:flex;align-items:center;
-                            justify-content:center;
-                            font-size:11px;color:#fff;font-weight:500;">
-                    {% if mg.grade_progressive >= 10 %}
-                    {{ "%.0f"|format(mg.grade_progressive) }}%
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if mg.grade_non_progressive > 0 %}
-                <div style="width:{{ mg.grade_non_progressive }}%;
-                            background:#378ADD;
-                            display:flex;align-items:center;
-                            justify-content:center;
-                            font-size:11px;color:#fff;font-weight:500;">
-                    {% if mg.grade_non_progressive >= 10 %}
-                    {{ "%.0f"|format(mg.grade_non_progressive) }}%
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if mg.grade_immotile > 0 %}
-                <div style="width:{{ mg.grade_immotile }}%;
-                            background:#888;
-                            display:flex;align-items:center;
-                            justify-content:center;
-                            font-size:11px;color:#fff;font-weight:500;">
-                    {% if mg.grade_immotile >= 10 %}
-                    {{ "%.0f"|format(mg.grade_immotile) }}%
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-            <div style="display:flex;gap:16px;margin-top:6px;
-                        font-size:11px;
-                        color:var(--color-text-secondary,#888);">
-                <span>🟢 전진</span>
-                <span>🔵 비전진</span>
-                <span>⚫ 비운동</span>
-            </div>
-        </div>
-
-        <!-- 판정 기준 -->
-        <div style="font-size:12px;
-                    color:var(--color-text-secondary,#888);
-                    padding:10px 12px;
-                    background:var(--color-background-secondary,#f5f5f5);
-                    border-radius:8px;line-height:1.7;">
-            판정 기준 —
-            전진(PR): VAP ≥ {{ mg.thresholds.VAP_min }} µm/s
-            이고 STR ≥ {{ mg.thresholds.STR_min }} /
-            비운동(IM): VCL &lt; {{ mg.thresholds.VCL_immotile }} µm/s /
-            비전진(NP): 그 외<br>
-            ※ 추적된 {{ mg.n_graded }}마리를 대상으로 개별 판정한 결과입니다.
-        </div>
-    </div>
-    {% endif %}
-
     <!-- ── 형태 분석 ──────────────────────────────────── -->
     {% if result.morphology %}
     {% set m = result.morphology %}
@@ -1013,6 +880,141 @@
                 {% endif %}
             </div>
         </div>
+    </div>
+    {% endif %}
+
+    <!-- ── 정자별 종합 분석 (운동성 + 형태 결합) ────── -->
+    {% if result.per_sperm %}
+    {% set ps = result.per_sperm %}
+    {% set ns = namespace(pr=0, morph_ok=0, both_ok=0, has_morph=0) %}
+    {% for tid, s in ps.items() %}
+        {% if s.motility_grade == 'PR' %}{% set ns.pr = ns.pr + 1 %}{% endif %}
+        {% if s.morphology is not none %}
+            {% set ns.has_morph = ns.has_morph + 1 %}
+            {% if s.morphology.is_normal %}{% set ns.morph_ok = ns.morph_ok + 1 %}{% endif %}
+            {% if s.motility_grade == 'PR' and s.morphology.is_normal %}
+                {% set ns.both_ok = ns.both_ok + 1 %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    {% set ps_total = ps|length %}
+
+    <div class="report-card">
+        <div class="card-header">
+            <h2>🔗 정자별 종합 분석</h2>
+            <span class="who-badge">운동성 + 형태 결합</span>
+        </div>
+
+        <!-- 일반인용 요약 통계 -->
+        <div class="for-simple explain-box">
+            <div class="explain-icon">💡</div>
+            <div class="explain-content">
+                <strong>운동성과 형태를 함께 보면?</strong>
+                <p>
+                    운동성이 좋아도 형태에 문제가 있거나,
+                    형태가 정상이어도 움직이지 못하는 정자가 있을 수 있습니다.
+                    여기서는 추적된 정자 한 마리씩 두 기준을 동시에 적용해봅니다.
+                </p>
+            </div>
+        </div>
+
+        <div class="morphology-summary" style="margin-bottom:16px;">
+            <div class="morph-stat">
+                <div class="morph-stat-num">{{ ps_total }}</div>
+                <div class="morph-stat-label">분석 정자(tid)</div>
+            </div>
+            <div class="morph-stat">
+                <div class="morph-stat-num accent">{{ ns.pr }}</div>
+                <div class="morph-stat-label">전진 운동(PR)</div>
+            </div>
+            {% if ns.has_morph > 0 %}
+            <div class="morph-stat">
+                <div class="morph-stat-num">{{ ns.morph_ok }}</div>
+                <div class="morph-stat-label">정상 형태</div>
+            </div>
+            <div class="morph-stat">
+                <div class="morph-stat-num accent">{{ ns.both_ok }}</div>
+                <div class="morph-stat-label">PR + 정상형태</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if ns.has_morph > 0 and ps_total > 0 %}
+        <div class="result-summary
+                    {{ 'summary-good' if (ns.both_ok / ps_total * 100) >= 10
+                    else 'summary-warn' if (ns.both_ok / ps_total * 100) >= 4
+                    else 'summary-bad' }}">
+            <div class="summary-icon">
+                {% if (ns.both_ok / ps_total * 100) >= 10 %}✅
+                {% elif (ns.both_ok / ps_total * 100) >= 4 %}⚠️
+                {% else %}🔴{% endif %}
+            </div>
+            <div class="summary-content">
+                추적된 {{ ps_total }}마리 중 운동성(PR)과 형태 모두 정상인 정자:
+                <strong>{{ ns.both_ok }}마리
+                ({{ "%.1f"|format(ns.both_ok / ps_total * 100) }}%)</strong>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 상세 테이블 토글 -->
+        <button id="per-sperm-toggle"
+                onclick="document.getElementById('per-sperm-table').classList.toggle('hidden')"
+                style="margin-top:16px;width:100%;padding:8px 12px;
+                       background:var(--color-background-secondary,#f5f5f5);
+                       border:1px solid var(--color-border,#e0e0e0);
+                       border-radius:8px;cursor:pointer;font-size:13px;
+                       color:var(--color-text-secondary,#666);text-align:left;">
+            🔍 정자별 상세 데이터 보기 / 접기
+        </button>
+        <div id="per-sperm-table" class="hidden" style="overflow-x:auto;margin-top:8px;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                    <tr style="background:var(--color-background-secondary,#f5f5f5);
+                                text-align:center;">
+                        <th style="padding:8px 6px;border-bottom:1px solid var(--color-border,#e5e5e5);">tid</th>
+                        <th style="padding:8px 6px;border-bottom:1px solid var(--color-border,#e5e5e5);">운동성</th>
+                        <th style="padding:8px 6px;border-bottom:1px solid var(--color-border,#e5e5e5);">머리</th>
+                        <th style="padding:8px 6px;border-bottom:1px solid var(--color-border,#e5e5e5);">첨체</th>
+                        <th style="padding:8px 6px;border-bottom:1px solid var(--color-border,#e5e5e5);">공포</th>
+                        <th style="padding:8px 6px;border-bottom:1px solid var(--color-border,#e5e5e5);">꼬리</th>
+                        <th style="padding:8px 6px;border-bottom:1px solid var(--color-border,#e5e5e5);">형태</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for tid, s in ps.items()|sort %}
+                {% set mg = s.motility_grade %}
+                {% set mo = s.morphology %}
+                <tr style="text-align:center;
+                            border-bottom:1px solid var(--color-border,#e5e5e5);">
+                    <td style="padding:6px;">{{ tid }}</td>
+                    <td style="padding:6px;font-weight:600;
+                                color:{{ '#1D9E75' if mg == 'PR'
+                                      else '#378ADD' if mg == 'NP'
+                                      else '#888' }};">
+                        {{ mg or '—' }}
+                    </td>
+                    {% if mo is not none %}
+                    {% set pa = mo.part_abnormal %}
+                    <td style="padding:6px;">{{ '⚠️' if pa.head else '✅' }}</td>
+                    <td style="padding:6px;">{{ '⚠️' if pa.acrosome else '✅' }}</td>
+                    <td style="padding:6px;">{{ '⚠️' if pa.vacuole else '✅' }}</td>
+                    <td style="padding:6px;">{{ '⚠️' if pa.tail else '✅' }}</td>
+                    <td style="padding:6px;font-weight:600;
+                                color:{{ '#1D9E75' if mo.is_normal else '#C87800' }};">
+                        {{ '정상' if mo.is_normal else '이상' }}
+                    </td>
+                    {% else %}
+                    <td colspan="5" style="padding:6px;
+                                           color:var(--color-text-secondary,#888);">
+                        형태 데이터 없음
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div><!-- /per-sperm-table -->
     </div>
     {% endif %}
 
@@ -1198,12 +1200,15 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+    .hidden { display: none !important; }
+</style>
 <script>
     // 도넛 차트 데이터 (서버에서 전달받은 값)
     window.MOTILITY_DATA = {
-        progressive:     {{ result.progressive }},
-        non_progressive: {{ result.non_progressive }},
-        immotile:        {{ result.immotile }},
+        progressive:     {{ result.motility_grades.grade_progressive if result.motility_grades else result.progressive }},
+        non_progressive: {{ result.motility_grades.grade_non_progressive if result.motility_grades else result.non_progressive }},
+        immotile:        {{ result.motility_grades.grade_immotile if result.motility_grades else result.immotile }},
     };
 </script>
 <script src="{{ url_for('static', filename='js/result.js') }}"></script>

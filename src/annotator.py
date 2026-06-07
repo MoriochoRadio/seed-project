@@ -136,7 +136,7 @@ def create_annotated_video(video_path: str,
     # tracker가 첫 max_frames(≈250)만 추적하므로 그 이후는 그릴 게 없다.
     if track_history:
         max_track_frame = max(
-            (f for pts in track_history.values() for f, _, _ in pts),
+            (f for pts in track_history.values() for f, *_ in pts),
             default=0)
         last_frame = min(max_track_frame, max_frames - 1)
     else:
@@ -164,7 +164,7 @@ def create_annotated_video(video_path: str,
     frame_index = defaultdict(list)        # frame_idx -> [(tid, cx, cy)]
     tid_frames  = defaultdict(set)         # tid -> {frame_idx} (박스 표시 판정용)
     for tid, pts in track_history.items():
-        for frame_idx, cx, cy in pts:
+        for frame_idx, cx, cy, *_ in pts:
             frame_index[frame_idx].append((tid, cx, cy))
             tid_frames[tid].add(frame_idx)
 

@@ -59,7 +59,8 @@ class SpermTracker:
                 ):
                     if cls == 0:
                         track_history[tid].append(
-                            (fidx, float(box[0]), float(box[1])))
+                            (fidx, float(box[0]), float(box[1]),
+                             float(box[2]), float(box[3])))
 
         cap.release()
         return dict(track_history)
@@ -77,7 +78,7 @@ class SpermTracker:
             if len(pts) < 5:
                 continue
 
-            coords = np.array([(cx, cy) for _, cx, cy in pts])
+            coords = np.array([(cx, cy) for _, cx, cy, *_ in pts])
             dists  = np.sqrt(
                 np.sum(np.diff(coords, axis=0)**2, axis=1))
             total_dist    = float(np.sum(dists))
@@ -128,7 +129,7 @@ class SpermTracker:
             if len(pts) < 10:
                 continue
 
-            raw_xy = np.array([[cx, cy] for _, cx, cy in pts],
+            raw_xy = np.array([[cx, cy] for _, cx, cy, *_ in pts],
                             dtype=np.float32)
 
             smooth_xy = smooth_trajectory_dct(raw_xy, n_keep=12)
@@ -180,7 +181,7 @@ class SpermTracker:
             if len(pts) < min_track_len:
                 continue
 
-            coords = np.array([(cx, cy) for _, cx, cy in pts])
+            coords = np.array([(cx, cy) for _, cx, cy, *_ in pts])
             n          = len(coords)
             total_time = (n - 1) * (1.0 / fps)
 

@@ -177,6 +177,45 @@ class MorphologyAnalyzer:
             'abnormal_rates': abnormal_rates,
         }
 
+    def analyze_per_tid(self, crops_per_tid: dict,
+                        batch_size: int = 128) -> dict:
+        """{tid: [crops]} → {tid: 형태 요약} (track별 배치 추론).
+
+        각 track(정자 1마리)의 크롭들을 모아 부위별 이상 여부를
+        다수결로 집계하고, 모든 부위가 정상일 때 is_normal=True.
+        """
+        if not crops_per_tid:
+            return {}
+
+        parts  = ['head', 'acrosome', 'vacuole', 'tail']
+        thr    = np.array([self.THRESHOLDS[p] for p in parts])
+        result = {}
+
+        for tid, crops in crops_per_tid.items():
+            if not crops:
+                continue
+            probs = self.classify_batch(crops, batch_size)   # (n,4)
+            preds = (probs > thr).astype(int)                # (n,4)
+            n     = int(preds.shape[0])
+
+            # 부위별: track 내 크롭의 과반이 이상이면 이상으로 판정
+            part_abnormal = {
+                p: bool(preds[:, i].sum() * 2 > n)
+                for i, p in enumerate(parts)
+            }
+            is_normal = not any(part_abnormal.values())
+
+            result[tid] = {
+                'n_crops':       n,
+                'is_normal':     is_normal,
+                'part_abnormal': part_abnormal,
+                'mean_probs': {
+                    p: round(float(probs[:, i].mean()), 3)
+                    for i, p in enumerate(parts)
+                },
+            }
+        return result
+
     def interpret_morphology(self, morphology: dict) -> dict:
         """형태 분석 결과 → WHO 기준 해석"""
         if not morphology:
