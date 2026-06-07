@@ -174,11 +174,8 @@ def run_analysis(job_id: str) -> None:
         progress_thread.start()
 
         # 실제 분석 실행 (정규화된 영상으로!)
-        _t_analyze = time.perf_counter()
         result = pipeline.analyze(
             analysis_video_path, verbose=True)
-        print(f"[TIMING] pipeline.analyze 전체: "
-              f"{time.perf_counter() - _t_analyze:.2f}s")
 
         if result is None:
             raise RuntimeError(
@@ -242,7 +239,6 @@ def run_analysis(job_id: str) -> None:
                 'confidence_score': result.get('confidence_score'),
             }
 
-            _t_annot = time.perf_counter()
             success = create_annotated_video(
                 video_path        = analysis_video_path,
                 output_path       = annotated_path,
@@ -251,8 +247,6 @@ def run_analysis(job_id: str) -> None:
                 motility_grades   = result.get('motility_grades'),
                 stats             = hud_stats,
             )
-            print(f"[TIMING] annotated video 생성: "
-                  f"{time.perf_counter() - _t_annot:.2f}s")
             if success:
                 result['annotated_video_path'] = annotated_path
                 # 브라우저 재생 가능한 깨끗한 복사본을 '원본' 패널로 서빙

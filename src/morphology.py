@@ -97,8 +97,8 @@ class MorphologyAnalyzer:
         print(f"   MHSMA AUC: 0.725 / "
               f"VISEM 정상형태율: ~8-12% (현실적)")
 
-    def preprocess_crop(self, crop: np.ndarray) -> torch.Tensor:
-        """YOLO 크롭 이미지 → 모델 입력 텐서"""
+    def _to_tensor(self, crop: np.ndarray) -> torch.Tensor:
+        """YOLO 크롭 이미지 → (3,128,128) 정규화 텐서 (배치 stack용)."""
         if len(crop.shape) == 3:
             gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
         else:
@@ -106,7 +106,11 @@ class MorphologyAnalyzer:
         resized = cv2.resize(gray, (128, 128))
         img     = np.stack([resized, resized, resized], axis=0)
         img     = torch.tensor(img / 255.0, dtype=torch.float32)
-        return self.transform(img).unsqueeze(0)
+        return self.transform(img)
+
+    def preprocess_crop(self, crop: np.ndarray) -> torch.Tensor:
+        """YOLO 크롭 이미지 → 모델 입력 텐서 (1,3,128,128)"""
+        return self._to_tensor(crop).unsqueeze(0)
 
     def classify_single(self, crop: np.ndarray) -> dict:
         """정자 크롭 하나 → 4가지 부위 정상/비정상 분류"""
@@ -127,21 +131,43 @@ class MorphologyAnalyzer:
         }
         return preds
 
-    def analyze_crops(self, crops: list) -> dict:
-        """여러 정자 크롭 → 샘플 수준 형태 분석"""
+    def classify_batch(self, crops: list,
+                       batch_size: int = 128) -> np.ndarray:
+        """크롭 리스트 → 부위별 시그모이드 확률 (N,4) 배열.
+
+        크롭을 한 개씩 추론하던 것을 배치로 묶어 GPU 활용도를 높인다.
+        결과는 한 개씩 추론과 동일하며 속도만 빨라진다.
+        """
+        if not crops:
+            return np.zeros((0, 4), dtype=np.float32)
+
+        all_probs = []
+        for i in range(0, len(crops), batch_size):
+            chunk = crops[i:i + batch_size]
+            batch = torch.stack(
+                [self._to_tensor(c) for c in chunk]).to(self.device)
+            with torch.no_grad():
+                out   = self.model(batch)
+                probs = torch.sigmoid(out).cpu().numpy()  # (B,4)
+            all_probs.append(probs)
+        return np.concatenate(all_probs, axis=0)
+
+    def analyze_crops(self, crops: list,
+                      batch_size: int = 128) -> dict:
+        """여러 정자 크롭 → 샘플 수준 형태 분석 (배치 추론)."""
         if not crops:
             return {}
 
-        results  = [self.classify_single(c) for c in crops]
-        n_total  = len(results)
-        n_normal = sum(1 for r in results if r['is_normal'])
-
         parts = ['head', 'acrosome', 'vacuole', 'tail']
+        probs = self.classify_batch(crops, batch_size)      # (N,4)
+        thr   = np.array([self.THRESHOLDS[p] for p in parts])
+        preds = (probs > thr).astype(int)                   # (N,4)
+
+        n_total   = int(preds.shape[0])
+        n_normal  = int((preds.sum(axis=1) == 0).sum())
         abnormal_rates = {
-            p: round(
-                sum(1 for r in results if r[p] == 1)
-                / n_total * 100, 1)
-            for p in parts
+            p: round(float(preds[:, i].sum()) / n_total * 100, 1)
+            for i, p in enumerate(parts)
         }
 
         return {

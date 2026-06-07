@@ -10,7 +10,6 @@ pipeline.py  ·  AI-CASA 통합 파이프라인 (Phase 1-3)
 
 import os
 import cv2
-import time
 import numpy as np
 
 from .detector    import SpermDetector
@@ -119,17 +118,13 @@ class SpermAnalysisPipeline:
             print(f"분석 시작: {name}")
             print("─" * 50)
 
-        _t_start = time.perf_counter()
-
         # Step 1: 정자 수 추정
         N, counts = self.detector.estimate_sperm_count(video_path)
-        _t_count = time.perf_counter()
         if verbose:
             print(f"[1/5] 정자 수 기준값: {N}개")
 
         # Step 2: 추적
         track_history = self.tracker.track_video(video_path)
-        _t_track = time.perf_counter()
         if verbose:
             print(f"[2/5] 추적 완료: {len(track_history)}개 ID")
 
@@ -155,19 +150,14 @@ class SpermAnalysisPipeline:
 
         # Step 5: 운동성 예측
         motility = self.analyzer.predict(features)
-        _t_motility = time.perf_counter()
         if verbose:
             print(f"[4/5] 운동성 분석 완료")
 
         # Step 6: 형태 분석
         morphology        = {}
         morphology_interp = {}
-        n_crops = 0
-        _t_crops = _t_motility
         if self.morph_analyzer is not None:
             crops = self._extract_crops(video_path)
-            _t_crops = time.perf_counter()
-            n_crops = len(crops)
             if crops:
                 morphology = self.morph_analyzer.analyze_crops(
                     crops)
@@ -177,20 +167,6 @@ class SpermAnalysisPipeline:
             if verbose:
                 print(f"[5/5] 형태 분석 완료 "
                       f"(크롭 {len(crops)}개)")
-        _t_morph = time.perf_counter()
-
-        # ── [TIMING] 단계별 소요시간 (병목 분석용, ASCII로 출력) ──
-        if verbose:
-            print("-" * 50)
-            print("[TIMING] stage seconds")
-            print(f"  count       : {_t_count    - _t_start:7.2f}")
-            print(f"  track       : {_t_track    - _t_count:7.2f}")
-            print(f"  motility    : {_t_motility - _t_track:7.2f}")
-            print(f"  crop_extract: {_t_crops    - _t_motility:7.2f}"
-                  f"   (crops={n_crops})")
-            print(f"  morph_infer : {_t_morph    - _t_crops:7.2f}")
-            print(f"  analyze_sum : {_t_morph    - _t_start:7.2f}")
-            print("-" * 50)
 
         # Step 7: WHO 해석 + 신뢰도
         interp  = interpret_motility(
