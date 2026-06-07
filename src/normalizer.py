@@ -18,6 +18,23 @@ TARGET_FPS      = 50
 MAX_DURATION    = 180   # 최대 3분 (초과 시 잘라냄)
 
 
+def _open_browser_writer(path, fps, size, isColor=True):
+    """브라우저 HTML5 <video> 호환 코덱(H.264 계열) 우선으로 VideoWriter를 연다.
+
+    mp4v(MPEG-4 Part 2)는 크롬/파폭/엣지가 HTML5 video로 재생하지 못한다.
+    따라서 H264/avc1을 먼저 시도하고, 실패 시에만 mp4v로 폴백한다.
+    annotated 영상(annotator.py)과 동일한 코덱 전략으로 맞춘다.
+    """
+    for fourcc_str in ('H264', 'X264', 'avc1', 'mp4v'):
+        writer = cv2.VideoWriter(
+            path, cv2.VideoWriter_fourcc(*fourcc_str),
+            fps, size, isColor)
+        if writer.isOpened():
+            print(f"[normalizer] 코덱: {fourcc_str}")
+            return writer
+    return None
+
+
 class VideoNormalizer:
     """입력 영상을 VISEM 표준으로 변환"""
 
@@ -130,13 +147,12 @@ class VideoNormalizer:
         max_frames = int(MAX_DURATION * orig_fps)
         max_frames = min(max_frames, orig_frames)
 
-        # VideoWriter 준비
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(
-            output_path, fourcc, orig_fps,
+        # VideoWriter 준비 (브라우저 호환 코덱 우선)
+        out = _open_browser_writer(
+            output_path, orig_fps,
             (orig_width, orig_height), isColor=True)
 
-        if not out.isOpened():
+        if out is None:
             cap.release()
             return self._error("출력 영상 생성 실패")
 
@@ -247,14 +263,13 @@ class VideoNormalizer:
                 f"길이 {orig_duration:.0f}초 → {MAX_DURATION}초로 자름")
         changes.append("그레이스케일 변환 (위상차 시뮬레이션)")
 
-        # ── VideoWriter 준비 ─────────────────────────────
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(
-            output_path, fourcc, TARGET_FPS,
+        # ── VideoWriter 준비 (브라우저 호환 코덱 우선) ─────
+        out = _open_browser_writer(
+            output_path, TARGET_FPS,
             (TARGET_WIDTH, TARGET_HEIGHT),
             isColor=True)  # 그레이스케일이지만 3채널로 저장
 
-        if not out.isOpened():
+        if out is None:
             cap.release()
             return self._error("출력 영상 생성 실패")
 
