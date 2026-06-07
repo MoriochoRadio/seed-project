@@ -84,11 +84,24 @@ def _draw_hud(frame, stats):
                     (240, 240, 240), 1, cv2.LINE_AA)
 
 
+def _open_writer(path, fps, size, isColor=True):
+    """브라우저 호환 코덱(H.264 계열) 우선으로 VideoWriter를 연다.
+    mp4v는 마지막 fallback. (normalizer._open_browser_writer와 동일 전략)"""
+    for fourcc_str in ('H264', 'X264', 'avc1', 'mp4v'):
+        w = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*fourcc_str),
+                            fps, size, isColor)
+        if w.isOpened():
+            print(f"[annotator] 코덱: {fourcc_str} -> {path}")
+            return w
+    return None
+
+
 def create_annotated_video(video_path: str,
                            output_path: str,
                            track_history: dict,
                            motility_grades: dict = None,
                            stats: dict = None,
+                           clean_output_path: str = None,
                            fps: float = 50.0,
                            trail_len: int = 20,
                            max_frames: int = 250) -> bool:
@@ -130,18 +143,18 @@ def create_annotated_video(video_path: str,
         last_frame = min(total - 1, max_frames - 1)
 
     # ── 출력 라이터 (브라우저 호환 코덱 우선) ───────────────
-    out = None
-    for fourcc_str in ('H264', 'X264', 'avc1', 'mp4v'):
-        fourcc = cv2.VideoWriter_fourcc(*fourcc_str)
-        cand = cv2.VideoWriter(output_path, fourcc, orig_fps, (W, H))
-        if cand.isOpened():
-            out = cand
-            print(f"[annotator] 코덱: {fourcc_str}, "
-                  f"렌더 프레임: 0~{last_frame} ({last_frame + 1}장)")
-            break
+    out = _open_writer(output_path, orig_fps, (W, H))
     if out is None:
         cap.release()
         return False
+    print(f"[annotator] 렌더 프레임: 0~{last_frame} ({last_frame + 1}장)")
+
+    # 오버레이 없는 '원본' 표시용 복사본 (같은 디코드 루프에서 동시 생성).
+    # 입력이 .avi/mjpeg/mp4v 등 브라우저 비호환이어도 항상 재생 가능한
+    # h264 mp4를 '원본' 패널에 제공하기 위함.
+    clean_out = None
+    if clean_output_path:
+        clean_out = _open_writer(clean_output_path, orig_fps, (W, H))
 
     # ── 사전 인덱스 구성 (매 프레임 재계산 방지) ────────────
     tid_grade = {}
@@ -163,6 +176,10 @@ def create_annotated_video(video_path: str,
         ret, frame = cap.read()
         if not ret:
             break
+
+        # 오버레이 그리기 전에 '원본' 복사본 저장 (frame은 이후 in-place로 그려짐)
+        if clean_out is not None:
+            clean_out.write(frame)
 
         # 이번 프레임에 등장한 정자 → 궤적 버퍼 갱신
         for tid, cx, cy in frame_index.get(frame_idx, []):
@@ -206,4 +223,6 @@ def create_annotated_video(video_path: str,
 
     cap.release()
     out.release()
+    if clean_out is not None:
+        clean_out.release()
     return True

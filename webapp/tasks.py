@@ -174,8 +174,11 @@ def run_analysis(job_id: str) -> None:
         progress_thread.start()
 
         # 실제 분석 실행 (정규화된 영상으로!)
+        _t_analyze = time.perf_counter()
         result = pipeline.analyze(
             analysis_video_path, verbose=True)
+        print(f"[TIMING] pipeline.analyze 전체: "
+              f"{time.perf_counter() - _t_analyze:.2f}s")
 
         if result is None:
             raise RuntimeError(
@@ -225,6 +228,7 @@ def run_analysis(job_id: str) -> None:
         try:
             base, _ = os.path.splitext(job['video_path'])
             annotated_path = f"{base}_annotated.mp4"
+            clean_path     = f"{base}_view.mp4"   # 브라우저 재생용 '원본' 복사본
             track_history  = result.get('_track_history', {})
 
             # HUD용 종합 수치 (정자 단위가 아닌 샘플 전체 값)
@@ -238,15 +242,22 @@ def run_analysis(job_id: str) -> None:
                 'confidence_score': result.get('confidence_score'),
             }
 
+            _t_annot = time.perf_counter()
             success = create_annotated_video(
-                video_path      = analysis_video_path,
-                output_path     = annotated_path,
-                track_history   = track_history,
-                motility_grades = result.get('motility_grades'),
-                stats           = hud_stats,
+                video_path        = analysis_video_path,
+                output_path       = annotated_path,
+                clean_output_path = clean_path,
+                track_history     = track_history,
+                motility_grades   = result.get('motility_grades'),
+                stats             = hud_stats,
             )
+            print(f"[TIMING] annotated video 생성: "
+                  f"{time.perf_counter() - _t_annot:.2f}s")
             if success:
                 result['annotated_video_path'] = annotated_path
+                # 브라우저 재생 가능한 깨끗한 복사본을 '원본' 패널로 서빙
+                if os.path.exists(clean_path):
+                    result['original_video_path'] = clean_path
         except Exception as e:
                 print(f"⚠️  annotated video 생성 실패: {e}")
                 traceback.print_exc()
