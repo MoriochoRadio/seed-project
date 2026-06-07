@@ -129,7 +129,11 @@ def serve_video(job_id, kind):
         return '', 404
 
     if kind == 'original':
-        path = job['video_path']
+        # 분석에 실제 사용된 영상(정규화본)을 우선 서빙한다.
+        # 원본 업로드는 정규화가 필요했던 경우 브라우저가 재생 못 하는
+        # 포맷일 수 있고, annotated 영상과 좌표/프레임도 어긋난다.
+        path = (job['result'].get('original_video_path')
+                or job['video_path'])
     elif kind == 'annotated':
         path = job['result'].get('annotated_video_path', '')
     else:

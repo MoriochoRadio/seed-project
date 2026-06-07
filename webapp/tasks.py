@@ -217,20 +217,41 @@ def run_analysis(job_id: str) -> None:
             is_full_norm or
             len(critical_issues) > 0
         )
+        # 분석에 실제 사용된 영상(정규화본)을 "원본" 표시용으로 저장.
+        # annotation 성공 여부와 무관하게 항상 설정한다.
+        result['original_video_path'] = analysis_video_path
+
         # ── annotated video 생성 ──────────────────────────  ← 여기 추가
         try:
             base, _ = os.path.splitext(job['video_path'])
             annotated_path = f"{base}_annotated.mp4"
+            clean_path     = f"{base}_view.mp4"   # 브라우저 재생용 '원본' 복사본
             track_history  = result.get('_track_history', {})
+
+            # HUD용 종합 수치 (정자 단위가 아닌 샘플 전체 값)
+            hud_stats = {
+                'N':               result.get('N'),
+                'progressive':     result.get('progressive'),
+                'non_progressive': result.get('non_progressive'),
+                'immotile':        result.get('immotile'),
+                'normal_rate':     (result.get('morphology')
+                                    or {}).get('normal_rate'),
+                'confidence_score': result.get('confidence_score'),
+            }
+
             success = create_annotated_video(
-                video_path      = analysis_video_path,
-                output_path     = annotated_path,
-                track_history   = track_history,
-                motility_grades = result.get('motility_grades'),
+                video_path        = analysis_video_path,
+                output_path       = annotated_path,
+                clean_output_path = clean_path,
+                track_history     = track_history,
+                motility_grades   = result.get('motility_grades'),
+                stats             = hud_stats,
             )
             if success:
                 result['annotated_video_path'] = annotated_path
-                result['original_video_path']  = analysis_video_path
+                # 브라우저 재생 가능한 깨끗한 복사본을 '원본' 패널로 서빙
+                if os.path.exists(clean_path):
+                    result['original_video_path'] = clean_path
         except Exception as e:
                 print(f"⚠️  annotated video 생성 실패: {e}")
                 traceback.print_exc()
