@@ -11,6 +11,7 @@ annotator.py
     화면 모서리 종합 수치(HUD)로 표시한다.
   - OpenCV putText는 한글을 렌더하지 못하므로 오버레이 텍스트는 ASCII만 사용한다.
 """
+import os
 import cv2
 import numpy as np
 from collections import defaultdict
