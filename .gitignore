@@ -52,14 +52,14 @@ outputs/*
 !outputs/.gitkeep
 
 # ── 모델 가중치 (용량 큼, 별도 배포) ─────────────
-*.pt
 *.pth
 *.h5
 *.onnx
-*.pkl
-models/
+models/*
 !models/.gitkeep
 !models/*.json
+!models/*.pkl
+!models/*.pt
 
 # ── 문서 임시파일 ─────────────────────────────────
 *.bak

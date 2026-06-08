@@ -227,20 +227,44 @@ def create_annotated_video(video_path: str,
     if clean_out is not None:
         clean_out.release()
 
-    # mp4v → H.264 변환 (브라우저 호환)
-    import subprocess
+    # mp4v → H.264 변환 (브라우저 호환) — ffmpeg 없으면 mp4v 그대로 사용
+    import subprocess, shutil, sys
     h264_path = output_path.replace('.mp4', '_h264.mp4')
-    ret = subprocess.run([
-        'ffmpeg', '-y', '-i', output_path,
-        '-vcodec', 'libx264',
-        '-crf', '23',
-        '-preset', 'fast',
-        '-pix_fmt', 'yuv420p',
-        h264_path
-    ], capture_output=True)
 
-    if ret.returncode == 0:
-        os.remove(output_path)
-        os.rename(h264_path, output_path)
+    # 절대경로 탐색 — PATH 의존 없이 직접 실행
+    ffmpeg_bin = shutil.which('ffmpeg')
+    if not ffmpeg_bin:
+        python_dir = os.path.dirname(sys.executable)
+        for subdir in (os.path.join('Library', 'bin'), 'bin', 'Scripts'):
+            c = os.path.join(python_dir, subdir, 'ffmpeg.exe')
+            if os.path.isfile(c):
+                ffmpeg_bin = c
+                break
+
+    def _to_h264(src: str) -> None:
+        """mp4v → H.264 in-place 변환. 실패해도 원본 유지."""
+        dst = src.replace('.mp4', '_h264.mp4')
+        try:
+            ret = subprocess.run([
+                ffmpeg_bin, '-y', '-i', src,
+                '-vcodec', 'libx264', '-crf', '23',
+                '-preset', 'fast', '-pix_fmt', 'yuv420p',
+                dst
+            ], capture_output=True)
+            if ret.returncode == 0:
+                os.remove(src)
+                os.rename(dst, src)
+            else:
+                print(f"[annotator] ffmpeg 변환 실패 ({os.path.basename(src)}):\n"
+                      f"{ret.stderr.decode(errors='ignore')}")
+        except Exception as e:
+            print(f"[annotator] ffmpeg 오류: {e}")
+
+    if ffmpeg_bin:
+        _to_h264(output_path)                                      # 주석 영상
+        if clean_output_path and os.path.exists(clean_output_path):
+            _to_h264(clean_output_path)                            # 원본 뷰 ← 추가
+    else:
+        print("[annotator] ffmpeg 없음 — mp4v 코덱 그대로 유지")
 
     return True

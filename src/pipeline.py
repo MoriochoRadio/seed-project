@@ -50,6 +50,7 @@ class SpermAnalysisPipeline:
             base, 'bytetrack_custom.yaml')
         morph_path     = morph_path or os.path.join(
             base, 'models', 'morphology_efficientnet_b3_v3.pt')
+        hybrid_path    = os.path.join(base, 'models', 'proposed_best.pt')
 
         self.detector  = SpermDetector(yolo_path)
         self.tracker   = SpermTracker(self.detector, tracker_config)
@@ -61,6 +62,14 @@ class SpermAnalysisPipeline:
         except Exception:
             self.morph_analyzer = None
             print("⚠️  형태 분석 모델 없음 → 운동성 분석만 수행")
+
+        # HybridModel (GPU 필수) — 없으면 grade_tracks() fallback
+        try:
+            from .hybrid_infer import HybridGrader
+            self.hybrid_grader = HybridGrader(hybrid_path)
+        except Exception as e:
+            self.hybrid_grader = None
+            print(f"⚠️  HybridModel 로드 실패 → 임계값 기반 등급화로 대체\n    ({e})")
 
     # ── 정자 크롭 추출 ─────────────────────────────────────
     def _extract_crops(self, video_path: str,
@@ -184,14 +193,19 @@ class SpermAnalysisPipeline:
         kinematics = self.tracker.compute_sample_kinematics(
             track_history, fps=50.0)
 
-        # Step 4b: per-sperm 운동성 등급화 (보조 view, 기본 on / 추가만)
+        # Step 4b: per-sperm 운동성 등급화
+        #   우선순위: HybridModel(GPU) > grade_tracks(임계값 fallback)
         motility_grades = {}
         if self.per_sperm_view:
-            motility_grades = self.tracker.grade_tracks(
-                track_history, fps=50.0,
-                str_min=self.grade_str_min,
-                vap_min=self.grade_vap_min,
-                vcl_immotile=self.grade_vcl_immotile)
+            if self.hybrid_grader is not None:
+                motility_grades = self.hybrid_grader.grade(
+                    track_history, fps=50.0)
+            else:
+                motility_grades = self.tracker.grade_tracks(
+                    track_history, fps=50.0,
+                    str_min=self.grade_str_min,
+                    vap_min=self.grade_vap_min,
+                    vcl_immotile=self.grade_vcl_immotile)
 
         # Step 5: 운동성 예측
         motility = self.analyzer.predict(features)

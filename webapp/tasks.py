@@ -11,7 +11,23 @@ import time
 import threading
 import traceback
 import subprocess
+import shutil
 from src.annotator import create_annotated_video
+
+
+def _find_ffmpeg() -> str:
+    """ffmpeg 실행파일 경로 탐색 (PATH → conda Library\bin → conda Scripts 순)."""
+    f = shutil.which('ffmpeg')
+    if f:
+        return f
+    # conda 환경: CONDA_PREFIX 또는 현재 인터프리터 위치로 추정
+    conda_prefix = os.environ.get('CONDA_PREFIX') or os.path.dirname(sys.executable)
+    for subdir in (os.path.join('Library', 'bin'), 'bin', 'Scripts'):
+        candidate = os.path.join(conda_prefix, subdir, 'ffmpeg.exe')
+        if os.path.isfile(candidate):
+            print(f"[ffmpeg] 발견: {candidate}")
+            return candidate
+    return 'ffmpeg'   # 마지막 fallback — 없으면 FileNotFoundError 발생
 
 # ── 작업 큐 (메모리 기반) ─────────────────────────────────
 # 실제 운영에선 Redis 등을 쓰지만 데모는 메모리로 충분
@@ -221,17 +237,25 @@ def run_analysis(job_id: str) -> None:
         # 분석에 실제 사용된 영상(정규화본)을 "원본" 표시용으로 저장.
          # 원본 영상을 H.264로 변환 (브라우저 호환)
         original_h264 = os.path.splitext(job['video_path'])[0] + '_original_h264.mp4'
-        ret = subprocess.run([
-            'ffmpeg', '-y', '-i', analysis_video_path,
-            '-vcodec', 'libx264',
-            '-crf', '23',
-            '-preset', 'fast',
-            '-pix_fmt', 'yuv420p',
-            original_h264
-        ], capture_output=True)
-        if ret.returncode == 0:
-            result['original_video_path'] = original_h264
+        ffmpeg_bin = _find_ffmpeg()
+        if ffmpeg_bin:
+            try:
+                ret = subprocess.run([
+                    ffmpeg_bin, '-y', '-i', analysis_video_path,
+                    '-vcodec', 'libx264', '-crf', '23',
+                    '-preset', 'fast', '-pix_fmt', 'yuv420p',
+                    original_h264
+                ], capture_output=True)
+                if ret.returncode != 0:
+                    print(f"[경고] ffmpeg 변환 실패:\n{ret.stderr.decode(errors='ignore')}")
+                result['original_video_path'] = (
+                    original_h264 if ret.returncode == 0 else analysis_video_path
+                )
+            except Exception as e:
+                print(f"[경고] ffmpeg 실행 오류: {e}")
+                result['original_video_path'] = analysis_video_path
         else:
+            print("[경고] ffmpeg를 찾을 수 없습니다. 원본 영상을 그대로 사용합니다.")
             result['original_video_path'] = analysis_video_path
         # ── annotated video 생성 ──────────────────────────  ← 여기 추가
         try:
