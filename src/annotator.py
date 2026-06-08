@@ -87,7 +87,7 @@ def _draw_hud(frame, stats):
 def _open_writer(path, fps, size, isColor=True):
     """브라우저 호환 코덱(H.264 계열) 우선으로 VideoWriter를 연다.
     mp4v는 마지막 fallback. (normalizer._open_browser_writer와 동일 전략)"""
-    for fourcc_str in ('H264', 'X264', 'avc1', 'mp4v'):
+    for fourcc_str in ('mp4v', 'H264', 'X264', 'avc1'):
         w = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*fourcc_str),
                             fps, size, isColor)
         if w.isOpened():
