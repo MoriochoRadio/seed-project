@@ -225,4 +225,21 @@ def create_annotated_video(video_path: str,
     out.release()
     if clean_out is not None:
         clean_out.release()
+
+    # mp4v → H.264 변환 (브라우저 호환)
+    import subprocess
+    h264_path = output_path.replace('.mp4', '_h264.mp4')
+    ret = subprocess.run([
+        'ffmpeg', '-y', '-i', output_path,
+        '-vcodec', 'libx264',
+        '-crf', '23',
+        '-preset', 'fast',
+        '-pix_fmt', 'yuv420p',
+        h264_path
+    ], capture_output=True)
+
+    if ret.returncode == 0:
+        os.remove(output_path)
+        os.rename(h264_path, output_path)
+
     return True
