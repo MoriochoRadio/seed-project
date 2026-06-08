@@ -86,13 +86,15 @@ def _draw_hud(frame, stats):
 
 
 def _open_writer(path, fps, size, isColor=True):
-    """브라우저 호환 코덱(H.264 계열) 우선으로 VideoWriter를 연다.
-    mp4v는 마지막 fallback. (normalizer._open_browser_writer와 동일 전략)"""
+    """중간 산출용 VideoWriter를 연다.
+    OpenCV의 H264/avc1 빌드는 환경마다 없을 수 있어 신뢰하기 어렵다.
+    여기서는 항상 열리는 mp4v로 쓰고, 최종 브라우저 호환(H.264+faststart)은
+    아래 _to_h264()의 ffmpeg 변환에서 보장한다."""
     for fourcc_str in ('mp4v', 'H264', 'X264', 'avc1'):
         w = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*fourcc_str),
                             fps, size, isColor)
         if w.isOpened():
-            print(f"[annotator] 코덱: {fourcc_str} -> {path}")
+            print(f"[annotator] 중간 코덱: {fourcc_str} -> {path}")
             return w
     return None
 
@@ -227,9 +229,8 @@ def create_annotated_video(video_path: str,
     if clean_out is not None:
         clean_out.release()
 
-    # mp4v → H.264 변환 (브라우저 호환) — ffmpeg 없으면 mp4v 그대로 사용
+    # mp4v → H.264 + faststart 변환 (브라우저 HTML5 <video> 호환)
     import subprocess, shutil, sys
-    h264_path = output_path.replace('.mp4', '_h264.mp4')
 
     # 절대경로 탐색 — PATH 의존 없이 직접 실행
     ffmpeg_bin = shutil.which('ffmpeg')
@@ -241,30 +242,45 @@ def create_annotated_video(video_path: str,
                 ffmpeg_bin = c
                 break
 
-    def _to_h264(src: str) -> None:
-        """mp4v → H.264 in-place 변환. 실패해도 원본 유지."""
+    def _to_h264(src: str) -> bool:
+        """mp4v → H.264 in-place 변환. 성공 시 True.
+        -movflags +faststart 로 moov atom을 앞으로 옮겨 preload=metadata가
+        즉시 길이를 읽도록 한다. 실패 시 원본(mp4v) 유지하고 False."""
         dst = src.replace('.mp4', '_h264.mp4')
         try:
             ret = subprocess.run([
                 ffmpeg_bin, '-y', '-i', src,
                 '-vcodec', 'libx264', '-crf', '23',
                 '-preset', 'fast', '-pix_fmt', 'yuv420p',
+                '-movflags', '+faststart',
                 dst
             ], capture_output=True)
-            if ret.returncode == 0:
+            if ret.returncode == 0 and os.path.exists(dst):
                 os.remove(src)
                 os.rename(dst, src)
-            else:
-                print(f"[annotator] ffmpeg 변환 실패 ({os.path.basename(src)}):\n"
-                      f"{ret.stderr.decode(errors='ignore')}")
+                print(f"[annotator] H.264 변환 완료: {os.path.basename(src)}")
+                return True
+            print(f"[annotator] [!] ffmpeg 변환 실패 ({os.path.basename(src)}):\n"
+                  f"{ret.stderr.decode(errors='ignore')[-500:]}")
         except Exception as e:
-            print(f"[annotator] ffmpeg 오류: {e}")
+            print(f"[annotator] [!] ffmpeg 오류: {e}")
+        return False
 
     if ffmpeg_bin:
         _to_h264(output_path)                                      # 주석 영상
         if clean_output_path and os.path.exists(clean_output_path):
-            _to_h264(clean_output_path)                            # 원본 뷰 ← 추가
+            ok = _to_h264(clean_output_path)                       # 원본 뷰
+            if not ok:
+                # 변환 실패한 mp4v는 브라우저에서 재생 불가 -> 삭제
+                # tasks.py가 clean_path 부재를 감지해 H.264 fallback을 쓴다.
+                try:
+                    os.remove(clean_output_path)
+                    print("[annotator] 변환 실패 mp4v clean 파일 제거 "
+                          "(원본 패널은 fallback 사용)")
+                except OSError:
+                    pass
     else:
-        print("[annotator] ffmpeg 없음 — mp4v 코덱 그대로 유지")
+        print("[annotator] [!] ffmpeg 없음 - 브라우저 비호환 mp4v 유지됨. "
+              "원본/주석 영상이 재생되지 않을 수 있음. ffmpeg 설치 필요.")
 
     return True

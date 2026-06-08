@@ -234,30 +234,10 @@ def run_analysis(job_id: str) -> None:
             is_full_norm or
             len(critical_issues) > 0
         )
-        # 분석에 실제 사용된 영상(정규화본)을 "원본" 표시용으로 저장.
-         # 원본 영상을 H.264로 변환 (브라우저 호환)
-        original_h264 = os.path.splitext(job['video_path'])[0] + '_original_h264.mp4'
-        ffmpeg_bin = _find_ffmpeg()
-        if ffmpeg_bin:
-            try:
-                ret = subprocess.run([
-                    ffmpeg_bin, '-y', '-i', analysis_video_path,
-                    '-vcodec', 'libx264', '-crf', '23',
-                    '-preset', 'fast', '-pix_fmt', 'yuv420p',
-                    original_h264
-                ], capture_output=True)
-                if ret.returncode != 0:
-                    print(f"[경고] ffmpeg 변환 실패:\n{ret.stderr.decode(errors='ignore')}")
-                result['original_video_path'] = (
-                    original_h264 if ret.returncode == 0 else analysis_video_path
-                )
-            except Exception as e:
-                print(f"[경고] ffmpeg 실행 오류: {e}")
-                result['original_video_path'] = analysis_video_path
-        else:
-            print("[경고] ffmpeg를 찾을 수 없습니다. 원본 영상을 그대로 사용합니다.")
-            result['original_video_path'] = analysis_video_path
-        # ── annotated video 생성 ──────────────────────────  ← 여기 추가
+        # ── annotated + 원본(분석 구간) 영상 생성 ───────────────
+        # 원본 패널에는 분석 구간(≈5초)과 길이/프레임이 일치하는 clean_path
+        # (_view.mp4)를 쓴다. annotator가 이를 H.264+faststart로 변환하며,
+        # 변환 실패 시 clean_path를 제거하므로 아래 fallback이 동작한다.
         try:
             base, _ = os.path.splitext(job['video_path'])
             annotated_path = f"{base}_annotated.mp4"
@@ -285,12 +265,42 @@ def run_analysis(job_id: str) -> None:
             )
             if success:
                 result['annotated_video_path'] = annotated_path
-                # 브라우저 재생 가능한 깨끗한 복사본을 '원본' 패널로 서빙
-                if os.path.exists(clean_path):
-                    result['original_video_path'] = clean_path
         except Exception as e:
-                print(f"⚠️  annotated video 생성 실패: {e}")
-                traceback.print_exc()
+            print(f"⚠️  annotated video 생성 실패: {e}")
+            traceback.print_exc()
+            clean_path = None
+
+        # ── 원본 패널 영상 결정 (브라우저 호환 H.264 보장) ───────
+        # 1순위: clean_path(_view.mp4) — 분석 구간 5초, 이미 H.264 변환됨
+        if clean_path and os.path.exists(clean_path):
+            result['original_video_path'] = clean_path
+        else:
+            # 2순위: 분석 영상 전체를 H.264+faststart로 직접 변환
+            original_h264 = (os.path.splitext(job['video_path'])[0]
+                             + '_original_h264.mp4')
+            ffmpeg_bin = _find_ffmpeg()
+            converted = False
+            if ffmpeg_bin:
+                try:
+                    ret = subprocess.run([
+                        ffmpeg_bin, '-y', '-i', analysis_video_path,
+                        '-vcodec', 'libx264', '-crf', '23',
+                        '-preset', 'fast', '-pix_fmt', 'yuv420p',
+                        '-movflags', '+faststart',
+                        original_h264
+                    ], capture_output=True)
+                    if ret.returncode == 0 and os.path.exists(original_h264):
+                        converted = True
+                    else:
+                        print(f"[경고] 원본 H.264 변환 실패:\n"
+                              f"{ret.stderr.decode(errors='ignore')[-500:]}")
+                except Exception as e:
+                    print(f"[경고] ffmpeg 실행 오류: {e}")
+            else:
+                print("[경고] ffmpeg를 찾을 수 없습니다. 원본을 그대로 사용합니다.")
+            # 3순위: 변환 실패 시 분석 영상 원본 그대로 (재생 안 될 수 있음)
+            result['original_video_path'] = (
+                original_h264 if converted else analysis_video_path)
 
         # 완료
         job['status']    = 'done'
