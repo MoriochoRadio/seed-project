@@ -10,6 +10,7 @@ import uuid
 import time
 import threading
 import traceback
+import subprocess
 from src.annotator import create_annotated_video
 
 # ── 작업 큐 (메모리 기반) ─────────────────────────────────
@@ -219,7 +220,20 @@ def run_analysis(job_id: str) -> None:
         )
         # 분석에 실제 사용된 영상(정규화본)을 "원본" 표시용으로 저장.
         # annotation 성공 여부와 무관하게 항상 설정한다.
-        result['original_video_path'] = analysis_video_path
+        original_h264 = f"{os.path.splitext(job['video_path'])[0]}_original_h264.mp4"
+        ret = subprocess.run([
+            'ffmpeg', '-y', '-i', analysis_video_path,
+            '-vcodec', 'libx264',
+            '-crf', '23',
+            '-preset', 'fast',
+            '-pix_fmt', 'yuv420p',
+            original_h264
+        ], capture_output=True)
+
+        if ret.returncode == 0:
+            result['original_video_path'] = original_h264
+        else:
+            result['original_video_path'] = analysis_video_path
 
         # ── annotated video 생성 ──────────────────────────  ← 여기 추가
         try:
