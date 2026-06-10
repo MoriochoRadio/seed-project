@@ -92,33 +92,67 @@ function formatFileSize(bytes) {
     return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB';
 }
 
-// ── 분석 시작 ────────────────────────────────────────────
-btnAnalyze.addEventListener('click', async () => {
+// ── 분석 시작 (XHR 업로드 + 진행률 표시) ──────────────────
+function showProgress(pct) {
+    let bar = document.getElementById('upload-progress');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'upload-progress';
+        bar.style.cssText =
+            'margin-top:12px;height:8px;border-radius:6px;' +
+            'background:#e5e7eb;overflow:hidden;';
+        bar.innerHTML =
+            '<div id="upload-progress-fill" style="height:100%;' +
+            'width:0;background:#4f46e5;transition:width .15s;"></div>';
+        btnAnalyze.insertAdjacentElement('afterend', bar);
+    }
+    document.getElementById('upload-progress-fill').style.width = pct + '%';
+    btnAnalyze.innerHTML = pct < 100
+        ? `⏳ 업로드 중... ${pct}%`
+        : '⌛ 서버 처리 중...';
+}
+
+function resetAnalyzeButton(msg) {
+    if (msg) alert('❌ 오류: ' + msg);
+    btnAnalyze.disabled = false;
+    btnAnalyze.innerHTML = '🔬 분석 시작하기';
+    const bar = document.getElementById('upload-progress');
+    if (bar) bar.remove();
+}
+
+btnAnalyze.addEventListener('click', () => {
     if (!selectedFile) return;
 
     btnAnalyze.disabled = true;
-    btnAnalyze.innerHTML = '⏳ 업로드 중...';
+    showProgress(0);
 
     const formData = new FormData();
     formData.append('video', selectedFile);
 
-    try {
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            body: formData,
-        });
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/analyze');
 
-        const data = await response.json();
+    // 업로드 진행률 (실제 전송 바이트 기준)
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            showProgress(Math.round((e.loaded / e.total) * 100));
+        }
+    });
 
-        if (data.job_id) {
-            // 분석 진행 페이지로 이동
+    // 서버 응답 수신
+    xhr.addEventListener('load', () => {
+        let data = {};
+        try { data = JSON.parse(xhr.responseText); } catch (_) {}
+        if (xhr.status >= 200 && xhr.status < 300 && data.job_id) {
+            showProgress(100);
             window.location.href = `/analyzing/${data.job_id}`;
         } else {
-            throw new Error(data.error || '업로드 실패');
+            resetAnalyzeButton(data.error || `업로드 실패 (HTTP ${xhr.status})`);
         }
-    } catch (err) {
-        alert('❌ 오류: ' + err.message);
-        btnAnalyze.disabled = false;
-        btnAnalyze.innerHTML = '🔬 분석 시작하기';
-    }
+    });
+
+    xhr.addEventListener('error', () => resetAnalyzeButton('네트워크 오류'));
+    xhr.addEventListener('abort', () => resetAnalyzeButton('업로드 취소됨'));
+
+    xhr.send(formData);
 });
