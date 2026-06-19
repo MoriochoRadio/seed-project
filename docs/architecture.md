@@ -3,26 +3,36 @@
 ## 1. 프로젝트 개요
 
 ### 목표
-정자 현미경 영상을 입력받아 AI 기반으로 운동성을 분석하고 WHO 기준 기반 설명형 결과를 출력하는 병원 전 단계 보조 분석 시스템.
+정자 현미경 영상을 입력받아 AI 기반으로 **운동성과 형태를 동일 객체 기준으로 통합 분석**하고, WHO 기준 기반 설명형 결과를 출력하는 병원 전 단계 보조 분석 시스템.
 
-### 최종 비전 (AI-CASA)
+### 개발 현황 (AI-CASA, v1.0.0 완료)
 ```
-Phase 1  ✅  운동성 분석 (현재 완성)
-Phase 2  🔜  품질 평가 강화
-Phase 3  📋  형태 분석 (Morphology)
-Phase 4  🎯  AI-CASA 통합 시스템
+Phase 1  ✅  운동성 분석 (YOLO11 + ByteTrack + 앙상블 회귀)
+Phase 2  ✅  품질 평가 · 영상 정규화 (quality.py · normalizer.py)
+Phase 3  ✅  형태 분석 (EfficientNet-B3, 4부위 분류)
+Phase 4  ✅  AI-CASA 통합 시스템 (웹 데모 · 주석 영상 · 신뢰도)
 ```
+
+> v1.0.0 기준 4계층 통합 파이프라인이 완성되었으며, 향후 개선 방향은 [5장](#5-향후-확장-설계)을 참고.
 
 ---
 
-## 2. 현재 시스템 구성 (Phase 1)
+## 2. 시스템 구성 (v1.0.0)
 
 ### 2-1. 전체 파이프라인
 
 ```
 [입력]
 현미경 영상 (.mp4 / .avi)
-640×480, 45~50fps
+다양한 해상도/프레임률
+
+        │
+        ▼
+
+[모듈 0] 품질 평가 · 정규화 (quality.py · normalizer.py)
+├── 입력 영상 품질 자동 평가
+├── VISEM 표준(640×480, 50fps)으로 정규화
+└── 부적합 영상은 재촬영 안내
 
         │
         ▼
@@ -45,16 +55,25 @@ Phase 4  🎯  AI-CASA 통합 시스템
         │
         ▼
 
-[모듈 3] MotilityAnalyzer (analyzer.py)
+[모듈 3] MotilityAnalyzer (analyzer.py) + 키네마틱 (casa_features.py)
 ├── Ridge + RandomForest 앙상블
 ├── 입력: 11개 특징 벡터
 ├── 전처리: StandardScaler
-└── 출력: [전진%, 비전진%, 비운동성%]
+├── CASA 키네마틱 지표 산출 (VCL/VSL/VAP/LIN/STR/WOB/ALH 등)
+└── 출력: [전진%, 비전진%, 비운동성%] + 키네마틱
 
         │
         ▼
 
-[모듈 4] interpreter.py
+[모듈 4] SpermMorphology (morphology.py)
+├── EfficientNet-B3 (v3, VISEM 도메인 증강)
+├── 입력: 정자 크롭 이미지
+└── 출력: 머리·첨체·공포·꼬리 4부위 정상/비정상 + 정상형태율
+
+        │
+        ▼
+
+[모듈 5] interpreter.py
 ├── WHO 6판 (2021) 기준 적용
 ├── 판정: 정상/경계/주의
 ├── 신뢰도 점수 (0~100점)
@@ -63,9 +82,10 @@ Phase 4  🎯  AI-CASA 통합 시스템
         │
         ▼
 
-[출력]
-SpermAnalysisPipeline.print_report()
-→ 설명형 보고서
+[출력] (annotator.py · webapp/)
+├── SpermAnalysisPipeline.print_report() → 설명형 보고서
+├── 주석 영상 (추적 ID·운동성 등급 시각화)
+└── Flask 웹 결과 페이지
 ```
 
 ### 2-2. 모듈별 상세
@@ -222,44 +242,42 @@ YOLO11으로 자동 탐지 + ByteTrack 추적
 
 ---
 
-## 5. 향후 확장 설계 (Phase 2~4)
+## 5. 향후 확장 설계
 
-### Phase 2: 품질 평가 강화
+v1.0.0에서 운동성·품질평가·형태·통합(Phase 1~4)이 완료되었으며, 향후 개선 방향은 다음과 같다.
 
-```
-추가 예정:
-- 영상 흔들림 감지 (optical flow 기반)
-- 조명 균일성 평가
-- 배경 잡음 수준 측정
-- 더 세밀한 재촬영 가이드
-```
-
-### Phase 3: 형태 분석 (Morphology)
+### 1) 처리 속도 향상
 
 ```
-새로 필요한 것:
-- 형태 어노테이션 데이터셋
-  (HSMA-DS, HuSHeM, MHSMA 등)
-- 정자 머리/꼬리 세분화 모델
-- 형태 이상 분류 모델
-
-판정 항목:
-- 머리 이상 (두부 결함)
-- 중편 이상 (경부/중간부 결함)
-- 꼬리 이상 (미부 결함)
-- Teratozoospermia index
+- 영상 전처리 병렬화
+- 실시간(스트리밍) 처리 구현
+→ 분석 대기 시간 단축
 ```
 
-### Phase 4: AI-CASA 통합
+### 2) 저농도 샘플 대응
 
 ```
-최종 출력:
-- 운동성 % (현재 구현)
-- 형태 정상률 %
-- 정자 농도 (선택적)
-- 종합 판정
-- 설명형 보고서
-- PDF 출력
+- 정자 수 < 10개 시 정확도 저하 보완
+- 신뢰도 감점 기준 세분화
+- 재촬영 가이드 고도화
+```
+
+### 3) WHO 6판 파라미터 확장
+
+```
+현재 미측정 항목 추가:
+- 정자 농도 (concentration)
+- 총정자수 (total sperm count)
+- 생존율 (vitality)
+→ 임상 기준 WHO 6판 대비 분석 완성도 향상
+```
+
+### 4) 형태 모델 도메인 적응 (중장기)
+
+```
+- VISEM 크롭 수동 레이블링 후 형태 모델 파인튜닝
+- Virtual Staining (GAN 기반) 도메인 적응
+- 실제 임상 데이터 확보 및 전향적 검증
 ```
 
 ---
@@ -284,18 +302,33 @@ src/
 │       └── extract_features(track_history) → dict | None
 │
 ├── analyzer.py
-│   └── class MotilityAnalyzer
-│       ├── __init__(model_path)
-│       └── predict(features) → dict
+│   └── class MotilityAnalyzer (Ridge + RF 앙상블, 운동성 % 예측)
+│
+├── casa_features.py
+│   └── CASA 키네마틱 지표 산출 (VCL/VSL/VAP/LIN/STR/WOB/ALH/BCF/PAW)
+│
+├── hybrid_infer.py
+│   └── per-track 운동성 등급화 (HybridTrajectoryModel)
+│
+├── morphology.py
+│   └── class (EfficientNet-B3 v3) 머리·첨체·공포·꼬리 4부위 분류
+│
+├── quality.py
+│   └── 입력 영상 품질 자동 평가
+│
+├── normalizer.py
+│   └── VISEM 표준(640×480, 50fps)으로 영상 정규화
 │
 ├── interpreter.py
 │   ├── WHO_CRITERIA (상수)
 │   ├── interpret_motility(prog, non_prog, immotile) → dict
 │   └── assess_confidence(counts, track_history, N) → dict
 │
+├── annotator.py
+│   └── 추적 결과 + 운동성 등급을 분석 영상에 시각화
+│
 └── pipeline.py
-    └── class SpermAnalysisPipeline
-        ├── __init__(yolo_path, model_path, tracker_config)
+    └── class SpermAnalysisPipeline (전체 통합 파이프라인)
         ├── analyze(video_path, verbose) → dict
         └── print_report(result, participant_id) → None
 ```
