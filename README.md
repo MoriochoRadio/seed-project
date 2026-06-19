@@ -91,8 +91,8 @@ main          ← 안정 버전 (직접 push 금지, PR로만 merge)
 
 본 팀 프로젝트의 출발점이 된 1인 프로토타입(`sperm-ai` v1.5.0)의 상세 개발 기록:
 
-- **전체 개발 여정** — [`docs/project-journey.md`](docs/project-journey.md)
 - **성능 평가** — [`docs/performance.md`](docs/performance.md)
+- **시스템 구조** — [`docs/architecture.md`](docs/architecture.md)
 
 ---
 
@@ -101,10 +101,12 @@ main          ← 안정 버전 (직접 push 금지, PR로만 merge)
 ```
 seed-project/
 ├── src/              ← 핵심 모듈 (detector, tracker, analyzer, morphology, pipeline)
+├── webapp/           ← Flask 웹 애플리케이션
 ├── models/           ← 학습된 모델 가중치 (YOLO11, 운동성 앙상블, 형태 v3)
 ├── data/             ← 데이터셋 (gitignore 처리)
 ├── notebooks/        ← 실험 및 분석 노트북
-├── docs/             ← 프로젝트 문서 (journey, performance)
+├── docs/             ← 프로젝트 문서 (architecture, performance, guides)
+├── deliverables/     ← 최종 발표 자료 및 공식 산출물 (v1.0.0)
 └── README.md
 ```
 
@@ -125,6 +127,18 @@ pip install -r requirements.txt
 # 3. 자신의 작업 브랜치로 이동
 git checkout feature/[자신의-파트명]
 ```
+
+---
+
+## 📦 Deliverables
+
+프로젝트 최종 발표 자료 및 공식 산출물(v1.0.0)은 [`deliverables/`](deliverables/) 폴더에 보존되어 있습니다.
+
+- 최종 발표 슬라이드 · 캡스톤 판넬 (`.pptx`)
+- 통합 산출물 문서 (`.hwp` / `.pdf`)
+- MS Project 일정·진척도 관리 (`.mpp`)
+
+자세한 내용은 [`deliverables/README.md`](deliverables/README.md) 참고.
 
 ---
 
