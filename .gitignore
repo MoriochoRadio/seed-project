@@ -46,6 +46,7 @@ lightning_logs/
 *.avi
 *.mov
 *.mkv
+!docs/images/demo.mp4    # README 시연 영상 (예외)
 tmp_uploads/*
 !tmp_uploads/.gitkeep
 outputs/*
