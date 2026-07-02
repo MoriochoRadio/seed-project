@@ -20,6 +20,10 @@
 ![Flask](https://img.shields.io/badge/Flask-API-000000?logo=flask&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+<br>
+
+**🌐 Language:** **한국어** | [English](README.en.md)
+
 </div>
 
 > 📑 본 README는 **최종 발표 자료([`deliverables/[T.O.P]Seed_최종발표_v1.0.0.pptx`](deliverables/))를 그대로 옮긴 구성**입니다.
