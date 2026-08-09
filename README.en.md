@@ -42,7 +42,7 @@ Faculty Advisor **Prof. Song Gi-won**  |  2026-1 Convergence Capstone Design I F
 | **05** | [Artifacts](#05-artifacts) | MS Project · Artifact status · Roadmap · Traceability · GitHub |
 | **06** | [Reference](#06-reference) | References |
 | **+** | [Appendix](#appendix) | Kinematic metrics · WHO criteria · Model details · Datasets · Limitations |
-| **+** | [Interview Q&A](#-interview-prep--technology-choice-qa) | Condensed rationale for key technology choices |
+| **+** | [Technology Q&A](#-technology-choice-qa--why-it-was-built-this-way) | Condensed rationale for key technology choices |
 | **+** | [Quick Start](#-quick-start) | How to run · Project structure |
 
 ---
@@ -502,7 +502,7 @@ The whole project's schedule, artifacts, and issues were shared and tracked via 
 
 ---
 
-## 💬 Interview Prep — Technology Choice Q&A
+## 💬 Technology Choice Q&A — Why It Was Built This Way
 
 > A condensed, answer-ready summary of the technology-choice rationale scattered across the main text and the Appendix. See each link for the detailed grounds.
 
