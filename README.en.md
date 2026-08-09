@@ -42,6 +42,7 @@ Faculty Advisor **Prof. Song Gi-won**  |  2026-1 Convergence Capstone Design I F
 | **05** | [Artifacts](#05-artifacts) | MS Project · Artifact status · Roadmap · Traceability · GitHub |
 | **06** | [Reference](#06-reference) | References |
 | **+** | [Appendix](#appendix) | Kinematic metrics · WHO criteria · Model details · Datasets · Limitations |
+| **+** | [Interview Q&A](#-interview-prep--technology-choice-qa) | Condensed rationale for key technology choices |
 | **+** | [Quick Start](#-quick-start) | How to run · Project structure |
 
 ---
@@ -351,7 +352,7 @@ The whole project's schedule, artifacts, and issues were shared and tracked via 
 # 06. Reference
 
 <details>
-<summary><b>View all references (22)</b></summary>
+<summary><b>View all references (20)</b></summary>
 
 1. Leslie, S. W., et al. (2024). *Male infertility.* StatPearls.
 2. National Health Insurance Service. (2024). *Infertility diagnoses over the past 5 years.* National audit data.
@@ -361,7 +362,7 @@ The whole project's schedule, artifacts, and issues were shared and tracked via 
 6. Barcena, P., et al. (2025). *AI approaches to male infertility in IVF: a mapping review.* PMC.
 7. Chawre, S., et al. (2024). *A Review of Semen Analysis: Updates From the WHO Sixth Edition Manual.* Cureus, 16(6), e63485.
 8. Mortimer, D., & Mortimer, S. T. (2015). *The future of computer-aided sperm analysis.* Asian Journal of Andrology, 17(4), 545–553.
-9. Finelli, R., et al. (2021). *The validity and reliability of computer-aided semen analyzers: a systematic review.* Translational Andrology and Urology.
+9. Finelli, R., et al. (2021). *The validity and reliability of computer-aided semen analyzers: a systematic review.* Translational Andrology and Urology, 10(7), 3069–3079.
 10. Gonzalez, D., et al. (2021). *Clinical Update on Home Testing for Male Fertility.* World Journal of Men's Health, 39(4), 615–625.
 11. Kobori, Y., et al. (2016). *Novel device for male infertility screening with single-ball lens microscope and smartphone.* Fertility and Sterility, 106(3), 574–578.
 12. U.S. FDA. (2016). *K161493: YO Home Sperm Test (510(k)).*
@@ -373,8 +374,6 @@ The whole project's schedule, artifacts, and issues were shared and tracked via 
 18. Zhang, Y., et al. (2022). *ByteTrack: Multi-Object Tracking by Associating Every Detection Box.* ECCV 2022.
 19. Tan, M., & Le, Q. V. (2019). *EfficientNet: Rethinking Model Scaling for CNNs.* ICML 2019, PMLR 97, 6105–6114.
 20. Miahi, E., et al. (2019). *Genetic Neural Architecture Search for automatic assessment of human sperm images.* arXiv:1909.09432.
-21. Finelli, R., et al. (2021). *The validity and reliability of computer-aided semen analyzers.* Translational Andrology and Urology, 10(7), 3069–3079.
-22. Gonzalez, D., et al. (2021). *Clinical Update on Home Testing for Male Fertility.* World Journal of Men's Health, 39(4), 615–625.
 
 </details>
 
@@ -500,6 +499,27 @@ The whole project's schedule, artifacts, and issues were shared and tracked via 
 | **Purpose** | An assistive/reference tool; does not replace medical diagnosis |
 
 </details>
+
+---
+
+## 💬 Interview Prep — Technology Choice Q&A
+
+> A condensed, answer-ready summary of the technology-choice rationale scattered across the main text and the Appendix. See each link for the detailed grounds.
+
+**Q1. Why the YOLO11 + ByteTrack combination for detection and tracking?**
+YOLO11 rapidly detects small sperm frame by frame, and ByteTrack recovers each sperm's identity and trajectory purely through detection-box association rules, with no extra training. Those trajectories are what make kinematic metrics such as VCL and VSL computable. → [Appendix — 4 AI models & training](#appendix)
+
+**Q2. Why a Ridge + RandomForest ensemble for motility prediction?**
+The task is regressing kinematic features from the tracked trajectories onto VISEM's clinical motility values, and averaging the two models stabilizes the prediction. The result was an MAE of 6.90 %p, lower than motilitAI (7.31 %p), the prior study under identical conditions. → [Model Performance](#-model-performance)
+
+**Q3. Why choose the VISEM family and MHSMA as datasets?**
+The VISEM family is a standard dataset published in *Nature Scientific Data* and adopted by MediaEval, enabling comparison with the world's best research under identical conditions; MHSMA is the standard benchmark for morphology analysis whose unstained, microscope conditions match our actual analysis videos. → [Dataset Description](#-dataset-description)
+
+**Q4. Why analyze only 5 seconds (250 frames) instead of the whole video?**
+Motility and CASA statistics converge stably even over short segments, and clinical CASA likewise analyzes short fields, so this choice secures both speed and consistency. → [Appendix — Confidence score · Video normalization · 5-second analysis](#appendix)
+
+**Q5. Why are the morphology numbers limited to "reference only"?**
+Because of the domain gap between the training data (MHSMA) and the applied videos, morphology is less reliable than motility, so it is explicitly marked reference-only; errors on low-quality or low-concentration videos are mitigated by the confidence score (re-recording recommended below 60 points). → [Appendix — System limitations](#appendix)
 
 ---
 
