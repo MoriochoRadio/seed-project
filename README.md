@@ -42,6 +42,7 @@
 | **05** | [Artifacts](#05-artifacts) | MS Project · 산출물 현황 · 향후 계획 · 추적성 · GitHub |
 | **06** | [Reference](#06-reference) | 참고문헌 |
 | **+** | [Appendix](#appendix) | 키네마틱 지표 · WHO 기준 · 모델 상세 · 데이터셋 · 한계 |
+| **+** | [면접 대비 Q&A](#-면접-대비--기술-선택-qa) | 기술 선택 이유 압축 요약 |
 | **+** | [Quick Start](#-quick-start) | 실행 방법 · 프로젝트 구조 |
 
 ---
@@ -351,7 +352,7 @@ Flask 기반 웹 애플리케이션으로 구현 (`webapp/` · `app.py`).
 # 06. Reference
 
 <details>
-<summary><b>참고문헌 전체 보기 (22편)</b></summary>
+<summary><b>참고문헌 전체 보기 (20편)</b></summary>
 
 1. Leslie, S. W., et al. (2024). *Male infertility.* StatPearls.
 2. 국민건강보험공단. (2024). *최근 5년간 난임 진단자 현황.* 국정감사 자료.
@@ -361,7 +362,7 @@ Flask 기반 웹 애플리케이션으로 구현 (`webapp/` · `app.py`).
 6. Barcena, P., et al. (2025). *AI approaches to male infertility in IVF: a mapping review.* PMC.
 7. Chawre, S., et al. (2024). *A Review of Semen Analysis: Updates From the WHO Sixth Edition Manual.* Cureus, 16(6), e63485.
 8. Mortimer, D., & Mortimer, S. T. (2015). *The future of computer-aided sperm analysis.* Asian Journal of Andrology, 17(4), 545–553.
-9. Finelli, R., et al. (2021). *The validity and reliability of computer-aided semen analyzers: a systematic review.* Translational Andrology and Urology.
+9. Finelli, R., et al. (2021). *The validity and reliability of computer-aided semen analyzers: a systematic review.* Translational Andrology and Urology, 10(7), 3069–3079.
 10. Gonzalez, D., et al. (2021). *Clinical Update on Home Testing for Male Fertility.* World Journal of Men's Health, 39(4), 615–625.
 11. Kobori, Y., et al. (2016). *Novel device for male infertility screening with single-ball lens microscope and smartphone.* Fertility and Sterility, 106(3), 574–578.
 12. U.S. FDA. (2016). *K161493: YO Home Sperm Test (510(k)).*
@@ -373,8 +374,6 @@ Flask 기반 웹 애플리케이션으로 구현 (`webapp/` · `app.py`).
 18. Zhang, Y., et al. (2022). *ByteTrack: Multi-Object Tracking by Associating Every Detection Box.* ECCV 2022.
 19. Tan, M., & Le, Q. V. (2019). *EfficientNet: Rethinking Model Scaling for CNNs.* ICML 2019, PMLR 97, 6105–6114.
 20. Miahi, E., et al. (2019). *Genetic Neural Architecture Search for automatic assessment of human sperm images.* arXiv:1909.09432.
-21. Finelli, R., et al. (2021). *The validity and reliability of computer-aided semen analyzers.* Translational Andrology and Urology, 10(7), 3069–3079.
-22. Gonzalez, D., et al. (2021). *Clinical Update on Home Testing for Male Fertility.* World Journal of Men's Health, 39(4), 615–625.
 
 </details>
 
@@ -500,6 +499,27 @@ Flask 기반 웹 애플리케이션으로 구현 (`webapp/` · `app.py`).
 | **용도** | 본 시스템은 **보조·참고 도구**이며 의학적 진단을 대체하지 않음 |
 
 </details>
+
+---
+
+## 💬 면접 대비 — 기술 선택 Q&A
+
+> 본문과 Appendix에 흩어져 있는 기술 선택 이유를 답변용으로 압축한 요약. 상세 근거는 각 링크 참고.
+
+**Q1. 탐지·추적을 왜 YOLO11 + ByteTrack 조합으로 했나?**
+YOLO11은 작은 정자를 프레임별로 빠르게 탐지하고, ByteTrack은 별도 학습 없이 탐지 박스 연결 규칙만으로 동일 정자의 ID·궤적을 복원한다. 이 궤적이 있어야 VCL·VSL 등 키네마틱 지표 산출이 가능하다. → [Appendix — AI 모델 4종 & 학습 방식](#appendix)
+
+**Q2. 운동성 예측에 왜 Ridge + RandomForest 앙상블을 썼나?**
+추적 궤적의 키네마틱 특징을 VISEM 임상 운동성 수치로 회귀하는 문제이며, 두 모델의 평균으로 예측을 안정화했다. 그 결과 MAE 6.90%p로 동일 조건 선행 연구 motilitAI(7.31%p)보다 낮았다. → [모델 성능](#-모델-성능)
+
+**Q3. 데이터셋으로 왜 VISEM 계열과 MHSMA를 골랐나?**
+VISEM 계열은 *Nature Scientific Data* 게재·MediaEval 채택 표준 데이터라 세계 최고 연구와 동일 조건 비교가 가능하고, MHSMA는 형태 분석 표준 벤치마크이면서 비염색·현미경 조건이 실제 분석 영상과 동일하기 때문이다. → [데이터셋 설명](#-데이터셋-설명)
+
+**Q4. 왜 영상 전체가 아니라 5초(250프레임)만 분석하나?**
+운동성·CASA 통계는 짧은 구간에서도 안정적으로 수렴하고 임상 CASA 역시 짧은 필드를 분석하므로, 속도와 일관성을 동시에 확보하는 선택이다. → [Appendix — 신뢰도 점수 · 영상 정규화 · 5초 분석](#appendix)
+
+**Q5. 형태 분석 수치를 왜 '참고용'으로 제한했나?**
+학습(MHSMA)과 적용 영상 간 도메인 차이로 운동성보다 신뢰도가 낮아 참고용으로 명시했고, 저품질·저농도 영상의 오차는 신뢰도 점수(60점 미만 시 재촬영 권고)로 보완한다. → [Appendix — 시스템의 한계](#appendix)
 
 ---
 
