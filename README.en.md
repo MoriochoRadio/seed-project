@@ -105,7 +105,7 @@ An examiner observes each sperm in the microscopy video manually and records its
 | # | Limitation | Detail | Result |
 |---|---|---|---|
 | 1 | **Examiner subjectivity** | Results vary with skill/condition; the same sample can yield different results | → hard to achieve consistent evaluation |
-| 2 | **Long analysis time** | Manually observing hundreds~thousands of sperm takes 30 min~1 hr | → low examination efficiency |
+| 2 | **Long analysis time** | Manually observing hundreds\~thousands of sperm takes 30 min\~1 hr | → low examination efficiency |
 | 3 | **Quantification limits** | Motility/trajectory hard to quantify; morphology relies on subjective criteria | → hard to secure objective metrics |
 
 <br>
