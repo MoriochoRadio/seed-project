@@ -5,6 +5,52 @@
 {% block content %}
 <section class="result-section">
 
+    <!-- ── 입력 영상 + 분석 결과 영상 ──────────────────── -->
+    {% if video_url or original_url %}
+    <div class="report-card video-result-card">
+        <div class="card-header">
+            <h2>🎥 분석 영상</h2>
+            <span class="who-badge">객체 탐지 + 추적</span>
+        </div>
+
+        <div class="video-grid">
+
+            <!-- 원본 영상 -->
+            {% if original_url %}
+            <div class="video-wrap">
+                <div class="video-label">입력 영상 (원본)</div>
+                <video controls muted loop playsinline
+                    class="result-video">
+                    <source src="{{ original_url }}" type="video/mp4">
+                    브라우저가 video 태그를 지원하지 않습니다.
+                </video>
+            </div>
+            {% endif %}
+
+            <!-- Annotated 영상 -->
+            {% if video_url %}
+            <div class="video-wrap">
+                <div class="video-label">
+                    분석 결과 영상
+                    <small>(정자 탐지 · 추적 시각화)</small>
+                </div>
+                <video controls muted loop playsinline
+                    class="result-video" autoplay>
+                    <source src="{{ video_url }}" type="video/mp4">
+                    브라우저가 video 태그를 지원하지 않습니다.
+                </video>
+                <div class="video-legend">
+                    <span class="legend-dot" style="background:#00c8ff;"></span>
+                    추적 중인 정자 &nbsp;
+                    <span class="legend-id">#ID</span> 개별 정자 번호
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- ── 종합 판정 배너 ──────────────────────────────── -->
     {% set overall = result.overall_status or '-' %}
     {% set overall_lvl = result.overall_level or 'normal' %}
