@@ -117,8 +117,8 @@ An examiner observes each sperm in the microscopy video manually and records its
 
 | # | Limitation | Detail | Result |
 |---|---|---|---|
-| 1 | **Examiner subjectivity** | Results vary with skill/condition; the same sample can yield different results | → hard to achieve consistent evaluation |
-| 2 | **Long analysis time** | Manually observing hundreds\~thousands of sperm takes 30 min\~1 hr | → low examination efficiency |
+| 1 | **Examiner subjectivity** | Results vary with skill/condition; the same sample can yield different results [5, 21] | → hard to achieve consistent evaluation |
+| 2 | **Long analysis time** | Manually observing hundreds\~thousands of sperm is time-consuming [15] | → low examination efficiency |
 | 3 | **Quantification limits** | Motility/trajectory hard to quantify; morphology relies on subjective criteria | → hard to secure objective metrics |
 
 <br>
@@ -364,14 +364,14 @@ The whole project's schedule, artifacts, and issues were shared and tracked via 
 # 06. Reference
 
 <details>
-<summary><b>View all references (20)</b></summary>
+<summary><b>View all references (21)</b></summary>
 
 1. Leslie, S. W., et al. (2024). *Male infertility.* StatPearls.
 2. National Health Insurance Service. (2024). *Infertility diagnoses over the past 5 years.* National audit data.
 3. Liang, Y., et al. (2025). *Global, regional, and national prevalence and trends of infertility (1990–2021).* Human Reproduction, 40(3), 529–544.
-4. Bieniek, J. M., et al. (2021). *A Novel Approach to Improving the Reliability of Manual Semen Analysis.* PMC.
+4. Douglas, C., et al. (2021). *A Novel Approach to Improving the Reliability of Manual Semen Analysis: A Paradigm Shift in the Workup of Infertile Men.* World Journal of Men's Health, 39(2), 172–185.
 5. Siddharth, K., et al. (2023). *Interobserver Variability in Semen Analysis.* Cureus, 15(10), e46388.
-6. Barcena, P., et al. (2025). *AI approaches to male infertility in IVF: a mapping review.* PMC.
+6. Qaderi, K., et al. (2025). *Artificial intelligence (AI) approaches to male infertility in IVF: a mapping review.* European Journal of Medical Research, 30, 246.
 7. Chawre, S., et al. (2024). *A Review of Semen Analysis: Updates From the WHO Sixth Edition Manual.* Cureus, 16(6), e63485.
 8. Mortimer, D., & Mortimer, S. T. (2015). *The future of computer-aided sperm analysis.* Asian Journal of Andrology, 17(4), 545–553.
 9. Finelli, R., et al. (2021). *The validity and reliability of computer-aided semen analyzers: a systematic review.* Translational Andrology and Urology, 10(7), 3069–3079.
@@ -386,6 +386,7 @@ The whole project's schedule, artifacts, and issues were shared and tracked via 
 18. Zhang, Y., et al. (2022). *ByteTrack: Multi-Object Tracking by Associating Every Detection Box.* ECCV 2022.
 19. Tan, M., & Le, Q. V. (2019). *EfficientNet: Rethinking Model Scaling for CNNs.* ICML 2019, PMLR 97, 6105–6114.
 20. Miahi, E., et al. (2019). *Genetic Neural Architecture Search for automatic assessment of human sperm images.* arXiv:1909.09432.
+21. Baker, K. C., et al. (2022). *Poor reproducibility of percentage of normally shaped sperm using the World Health Organization Fifth Edition strict grading criteria.* F&S Reports, 3(2), 110–115.
 
 </details>
 
