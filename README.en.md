@@ -30,8 +30,8 @@ Faculty Advisor **Prof. Song Gi-won**  |  2026-1 Convergence Capstone Design I F
 >
 > | | |
 > |---|---|
-> | **Role** | ENG1 — system architecture (co-designed with ENG2), inter-layer interface definitions, integration of 8 modules built in parallel by 4 people, performance tuning, **morphology analysis model** |
-> | **Structure** | Four-layer pipeline: input normalization → detection/tracking → motility regression and morphology classification → WHO judgment. Interfaces were fixed in documents first so the team could build in parallel |
+> | **Role** | ENG1 — **built the first version** from sperm detection to the Flask web server (Apr 2026), which the team then extended · in the team: **morphology analysis model** (batched inference, 53.6 s → 1.3 s) and system architecture and integration (shared with ENG2), co-authored the requirements, basic and detailed design documents |
+> | **Structure** | Four-layer pipeline: input normalization → detection/tracking → motility regression and morphology classification → WHO judgment. Module inputs and outputs are documented in the detailed design (written by ENG1, reviewed by ENG2) |
 > | **Results** | All three targets fixed before kickoff were met — motility MAE 6.90%p (below the prior study's 7.31%p), detection mAP@50 0.677, morphology AUC 0.725 |
 > | **Documents** | Requirements spec, risk management plan, basic and detailed design, user manual (co-authored by ENG1 and ENG2) |
 > | **Led to** | Solo baseline [sperm-ai](https://github.com/MoriochoRadio/sperm-ai) · morphology domain-adaptation experiments → first-author paper at KKITS 2026 |
