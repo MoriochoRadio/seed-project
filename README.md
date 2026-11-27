@@ -117,8 +117,8 @@ AI가 영상 속 정자를 자동으로 검출하고 추적하여, 정자의 상
 
 | # | 한계 | 내용 | 결과 |
 |---|---|---|---|
-| 1 | **검사자 주관 개입** | 숙련도·컨디션에 따라 결과 편차, 동일 샘플도 다른 결과 | → 일관된 평가 어려움 |
-| 2 | **긴 분석 시간** | 수백\~수천 개 정자를 수동 관찰, 30분\~1시간 소요 | → 검사 효율 낮음 |
+| 1 | **검사자 주관 개입** | 숙련도·컨디션에 따라 결과 편차, 동일 샘플도 다른 결과 [5, 21] | → 일관된 평가 어려움 |
+| 2 | **긴 분석 시간** | 수백\~수천 개 정자를 수동 관찰, 많은 시간 소요 [15] | → 검사 효율 낮음 |
 | 3 | **정량화 한계** | 운동성·궤적 정량화 곤란, 형태 평가는 주관적 기준 의존 | → 객관적 지표 확보 어려움 |
 
 <br>
@@ -364,14 +364,14 @@ Flask 기반 웹 애플리케이션으로 구현 (`webapp/` · `app.py`).
 # 06. Reference
 
 <details>
-<summary><b>참고문헌 전체 보기 (20편)</b></summary>
+<summary><b>참고문헌 전체 보기 (21편)</b></summary>
 
 1. Leslie, S. W., et al. (2024). *Male infertility.* StatPearls.
 2. 국민건강보험공단. (2024). *최근 5년간 난임 진단자 현황.* 국정감사 자료.
 3. Liang, Y., et al. (2025). *Global, regional, and national prevalence and trends of infertility (1990–2021).* Human Reproduction, 40(3), 529–544.
-4. Bieniek, J. M., et al. (2021). *A Novel Approach to Improving the Reliability of Manual Semen Analysis.* PMC.
+4. Douglas, C., et al. (2021). *A Novel Approach to Improving the Reliability of Manual Semen Analysis: A Paradigm Shift in the Workup of Infertile Men.* World Journal of Men's Health, 39(2), 172–185.
 5. Siddharth, K., et al. (2023). *Interobserver Variability in Semen Analysis.* Cureus, 15(10), e46388.
-6. Barcena, P., et al. (2025). *AI approaches to male infertility in IVF: a mapping review.* PMC.
+6. Qaderi, K., et al. (2025). *Artificial intelligence (AI) approaches to male infertility in IVF: a mapping review.* European Journal of Medical Research, 30, 246.
 7. Chawre, S., et al. (2024). *A Review of Semen Analysis: Updates From the WHO Sixth Edition Manual.* Cureus, 16(6), e63485.
 8. Mortimer, D., & Mortimer, S. T. (2015). *The future of computer-aided sperm analysis.* Asian Journal of Andrology, 17(4), 545–553.
 9. Finelli, R., et al. (2021). *The validity and reliability of computer-aided semen analyzers: a systematic review.* Translational Andrology and Urology, 10(7), 3069–3079.
@@ -386,6 +386,7 @@ Flask 기반 웹 애플리케이션으로 구현 (`webapp/` · `app.py`).
 18. Zhang, Y., et al. (2022). *ByteTrack: Multi-Object Tracking by Associating Every Detection Box.* ECCV 2022.
 19. Tan, M., & Le, Q. V. (2019). *EfficientNet: Rethinking Model Scaling for CNNs.* ICML 2019, PMLR 97, 6105–6114.
 20. Miahi, E., et al. (2019). *Genetic Neural Architecture Search for automatic assessment of human sperm images.* arXiv:1909.09432.
+21. Baker, K. C., et al. (2022). *Poor reproducibility of percentage of normally shaped sperm using the World Health Organization Fifth Edition strict grading criteria.* F&S Reports, 3(2), 110–115.
 
 </details>
 
